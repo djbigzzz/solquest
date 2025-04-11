@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <linearGradient id="solflare-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" style="stop-color:#FE9A22;stop-opacity:1" />
+    <stop offset="100%" style="stop-color:#FF4D4D;stop-opacity:1" />
+  </linearGradient>
+  <rect width="200" height="200" rx="40" fill="url(#solflare-grad)" />
+  <path d="M100 60L140 100L100 140L60 100L100 60Z" fill="white" />
+  <circle cx="100" cy="100" r="20" fill="url(#solflare-grad)" />
+</svg>

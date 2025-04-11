@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import custom animations */
+@import './styles/animations.css';
+
+/* Wallet Adapter Custom Styles */
+.wallet-adapter-button {
+  background-color: theme('colors.solana-purple') !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.wallet-adapter-button:hover {
+  background-color: theme('colors.solana-green') !important;
+}
+
+.wallet-adapter-button-trigger {
+  background: linear-gradient(to right, theme('colors.solana-purple'), theme('colors.solana-green')) !important;
+}
+
+.wallet-adapter-modal-wrapper {
+  background-color: #1a1a1a !important;
+}
+
+.wallet-adapter-modal-button-close {
+  background-color: theme('colors.solana-purple') !important;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #121212;
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+}
+
+@layer components {
+  .quest-card {
+    @apply bg-card-bg rounded-xl p-4 shadow-quest-card transition-all duration-300 hover:shadow-quest-card-hover hover:scale-[1.02];
+  }
+  
+  .connect-wallet-btn {
+    @apply bg-gradient-to-r from-solana-purple to-solana-green text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300 hover:opacity-90;
+  }
+  
+  .start-quest-btn {
+    @apply bg-solana-green text-black font-semibold py-2 px-4 rounded-lg transition-all duration-300 hover:opacity-90;
+  }
+  
+  .reward-text {
+    @apply text-solana-green font-semibold;
+  }
+  
+  .nav-link {
+    @apply text-white/80 hover:text-white transition-colors duration-200;
+  }
+  
+  .progress-circle {
+    @apply rounded-full border-4 border-solana-purple/30;
+  }
+  
+  .progress-circle-fill {
+    @apply rounded-full border-4 border-solana-purple;
+  }
+}
