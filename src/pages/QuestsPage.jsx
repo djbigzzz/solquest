@@ -1,8 +1,8 @@
 import React from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import useAuth from '../hooks/useAuth';
 import TwitterFollowQuest from '../components/TwitterFollowQuest';
 import NFTMintQuest from '../components/NFTMintQuest';
+import useAuth from '../hooks/useAuth';
 
 function QuestsPage() {
   const { connected } = useWallet();
@@ -10,23 +10,29 @@ function QuestsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white">Quests</h1>
-      </div>
-      
+      <h1 className="text-3xl font-bold text-white mb-2">SolQuest Quests</h1>
+      <p className="text-gray-400 mb-6">Complete quests for SolQuest to earn points and exclusive rewards.</p>
+
       {!connected || !isAuthenticated ? (
-        <div className="bg-yellow-900/30 border border-yellow-800 rounded-lg p-4 mb-8 text-center">
-          <p className="text-yellow-200 text-lg mb-2">Please connect your wallet to access quests</p>
-          <p className="text-yellow-200/70 text-sm">You need to connect your Solana wallet to start completing quests</p>
+        <div className="bg-yellow-900/30 border border-yellow-800 rounded-lg p-3 mb-6 text-center max-w-md mx-auto">
+          <p className="text-yellow-200 text-sm">Please connect your wallet to access quests</p>
         </div>
       ) : null}
       
-      <div className="mb-10">
-        <h2 className="text-2xl font-semibold text-white mb-4">Available Quests</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Main Quest Section */}
+      <div className="max-w-md mx-auto space-y-6">
+        <div className="w-full">
           <TwitterFollowQuest />
+        </div>
+        <div className="w-full">
           <NFTMintQuest />
         </div>
+      </div>
+      
+      {/* Coming Soon Section */}
+      <div className="mt-12 text-center">
+        <h2 className="text-xl font-bold text-white mb-4">More Quests Coming Soon</h2>
+        <p className="text-gray-400 mb-6">Stay tuned for additional quests and opportunities to earn rewards!</p>
       </div>
     </div>
   );
