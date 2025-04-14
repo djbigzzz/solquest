@@ -2,266 +2,39 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import useSolanaWallet from '../hooks/useWallet';
+import useQuests from '../hooks/useQuests';
+import useAuth from '../hooks/useAuth';
 import QuestSubtask from '../components/QuestSubtask';
 import confetti from 'canvas-confetti';
 
-// Import quest images
+// Import for fallback image
 import solanaBasicsImg from '../assets/images/solana-basics.svg';
-import solquestProjectImg from '../assets/images/solquest-project.svg';
-import defiExplorerImg from '../assets/images/defi-explorer.svg';
-import nftCreationImg from '../assets/images/nft-creation.svg';
-import stakingBasicsImg from '../assets/images/staking-basics.svg';
 
-// Import partner logos
-import phantomLogo from '../assets/images/partners/phantom.svg';
-import solflareLogo from '../assets/images/partners/solflare.svg';
-import magicedenLogo from '../assets/images/partners/magiceden.svg';
-import orcaLogo from '../assets/images/partners/orca.svg';
-import marinadeLogo from '../assets/images/partners/marinade.svg';
 
-// Mock data for quest subtasks
-const questsData = {
-  'solana-basics': {
-    id: 'solana-basics',
-    title: 'Solana Basics',
-    description: 'Get started with Solana by learning the fundamentals and earning your first rewards',
-    reward: '0.5 SOL',
-    image: solanaBasicsImg,
-    category: 'Education',
-    xp: 250,
-    partner: {
-      name: 'Phantom',
-      logo: phantomLogo,
-      website: 'https://phantom.app'
-    },
-    subtasks: [
-      {
-        id: 'solana-basics-1',
-        title: 'Create a Solana wallet',
-        description: 'Set up a Phantom or Solflare wallet and secure your recovery phrase',
-        xp: 50,
-        completed: false
-      },
-      {
-        id: 'solana-basics-2',
-        title: 'Get test SOL from faucet',
-        description: 'Visit the Solana devnet faucet and request test SOL tokens',
-        xp: 50,
-        completed: false
-      },
-      {
-        id: 'solana-basics-3',
-        title: 'Send your first transaction',
-        description: 'Send a small amount of SOL to another wallet address',
-        xp: 75,
-        completed: false
-      },
-      {
-        id: 'solana-basics-4',
-        title: 'Explore the Solana ecosystem',
-        description: 'Visit the Solana dApp store and explore at least 3 applications',
-        xp: 75,
-        completed: false
-      }
-    ]
-  },
-  'solquest-project': {
-    id: 'solquest-project',
-    title: 'SolQuest Project',
-    description: 'Join the SolQuest community, follow our socials, and earn exclusive NFT rewards',
-    reward: '0.75 SOL + Exclusive NFT',
-    xp: 350,
-    image: solquestProjectImg,
-    category: 'Community',
-    featured: true,
-    partner: {
-      name: 'SolQuest',
-      logo: solquestProjectImg,
-      website: 'https://solquest.io'
-    },
-    subtasks: [
-      {
-        id: 'solquest-project-1',
-        title: 'Follow SolQuest on Twitter',
-        description: 'Follow our official Twitter account @SolQuestProject',
-        xp: 50,
-        completed: false,
-        socialLink: 'https://twitter.com'
-      },
-      {
-        id: 'solquest-project-2',
-        title: 'Join our Discord community',
-        description: 'Join the SolQuest Discord server and introduce yourself',
-        xp: 75,
-        completed: false,
-        socialLink: 'https://discord.com'
-      },
-      {
-        id: 'solquest-project-3',
-        title: 'Share SolQuest with your network',
-        description: 'Post about SolQuest on your social media and tag us',
-        xp: 100,
-        completed: false
-      },
-      {
-        id: 'solquest-project-4',
-        title: 'Purchase the SolQuest Starter NFT',
-        description: 'Buy our exclusive NFT that provides bonus rewards for all quests',
-        xp: 125,
-        completed: false,
-        nftLink: 'https://magiceden.io'
-      }
-    ]
-  },
-  'defi-explorer': {
-    id: 'defi-explorer',
-    title: 'DeFi Explorer',
-    description: 'Learn about DeFi protocols on Solana and complete swaps',
-    reward: '0.5 SOL',
-    xp: 200,
-    image: defiExplorerImg,
-    category: 'DeFi',
-    partner: {
-      name: 'Orca',
-      logo: orcaLogo,
-      website: 'https://www.orca.so'
-    },
-    subtasks: [
-      {
-        id: 'defi-explorer-1',
-        title: 'Create a Solana wallet',
-        description: 'Set up a Phantom or Solflare wallet',
-        xp: 50,
-        completed: false
-      },
-      {
-        id: 'defi-explorer-2',
-        title: 'Fund your wallet',
-        description: 'Add SOL to your wallet using a faucet or exchange',
-        xp: 50,
-        completed: false
-      },
-      {
-        id: 'defi-explorer-3',
-        title: 'Explore Jupiter Aggregator',
-        description: 'Visit Jupiter and explore available tokens',
-        xp: 50,
-        completed: false
-      },
-      {
-        id: 'defi-explorer-4',
-        title: 'Complete a token swap',
-        description: 'Swap a small amount of SOL for another token',
-        xp: 50,
-        completed: false
-      }
-    ]
-  },
-  'nft-creation': {
-    id: 'nft-creation',
-    title: 'NFT Creation',
-    description: 'Create and mint your first NFT on Solana',
-    reward: '0.8 SOL',
-    xp: 300,
-    image: nftCreationImg,
-    category: 'NFT',
-    partner: {
-      name: 'Magic Eden',
-      logo: magicedenLogo,
-      website: 'https://magiceden.io'
-    },
-    subtasks: [
-      {
-        id: 'nft-creation-1',
-        title: 'Design your NFT',
-        description: 'Create a digital artwork for your NFT',
-        xp: 75,
-        completed: false
-      },
-      {
-        id: 'nft-creation-2',
-        title: 'Set up a Solana wallet',
-        description: 'Create a wallet that supports NFTs',
-        xp: 75,
-        completed: false
-      },
-      {
-        id: 'nft-creation-3',
-        title: 'Choose an NFT marketplace',
-        description: 'Explore Magic Eden, Tensor, or other marketplaces',
-        xp: 75,
-        completed: false
-      },
-      {
-        id: 'nft-creation-4',
-        title: 'Mint your NFT',
-        description: 'Follow the minting process on your chosen platform',
-        xp: 75,
-        completed: false
-      }
-    ]
-  },
-  'staking-basics': {
-    id: 'staking-basics',
-    title: 'Staking Basics',
-    description: 'Learn how to stake SOL and earn passive rewards',
-    reward: '0.3 SOL',
-    xp: 150,
-    image: stakingBasicsImg,
-    category: 'Staking',
-    partner: {
-      name: 'Marinade',
-      logo: marinadeLogo,
-      website: 'https://marinade.finance'
-    },
-    subtasks: [
-      {
-        id: 'staking-basics-1',
-        title: 'Understand staking concepts',
-        description: 'Learn about validators, rewards, and risks',
-        xp: 30,
-        completed: false
-      },
-      {
-        id: 'staking-basics-2',
-        title: 'Research validators',
-        description: 'Find a reliable validator with good performance',
-        xp: 40,
-        completed: false
-      },
-      {
-        id: 'staking-basics-3',
-        title: 'Stake your SOL',
-        description: 'Delegate your SOL to your chosen validator',
-        xp: 40,
-        completed: false
-      },
-      {
-        id: 'staking-basics-4',
-        title: 'Monitor your staking rewards',
-        description: 'Track your earnings over time',
-        xp: 40,
-        completed: false
-      }
-    ]
-  }
-};
 
 const QuestDetail = () => {
   const { questId } = useParams();
   const [quest, setQuest] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { connected } = useWallet();
+  const { connected, publicKey } = useWallet();
+  const { isAuthenticated, user } = useAuth();
   const { formatWalletAddress } = useSolanaWallet();
   const [subtasks, setSubtasks] = useState([]);
-  const [error, setError] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [apiStatus, setApiStatus] = useState({ connected: false, message: '' });
+  const [retryCount, setRetryCount] = useState(0);
+  
+  // Use our custom hook for quests data
+  const {
+    loading: isLoading,
+    error,
+    fetchQuestById,
+    startQuest,
+    completeQuestStep
+  } = useQuests();
 
   useEffect(() => {
-    const fetchQuest = async () => {
-      setIsLoading(true);
-      // In a real app, this would be an API call
-      setTimeout(() => {
+    const loadQuestData = async () => {
+      try {
         // Map old quest IDs to new ones for backward compatibility
         const idMap = {
           'quest-1': 'defi-explorer',
@@ -271,38 +44,77 @@ const QuestDetail = () => {
         
         const mappedQuestId = idMap[questId] || questId;
         
-        if (questsData[mappedQuestId]) {
-          setQuest(questsData[mappedQuestId]);
-          setSubtasks(questsData[mappedQuestId].subtasks);
+        // Fetch quest data from the API
+        const questData = await fetchQuestById(mappedQuestId);
+        
+        if (questData) {
+          setQuest(questData);
+          setSubtasks(questData.subtasks || []);
+          setApiStatus({ connected: true, message: 'Connected to SolQuest API' });
         } else {
-          setError('Quest not found');
+          setApiStatus({ 
+            connected: false, 
+            message: 'Quest not found. Using cached data if available.' 
+          });
         }
-        setIsLoading(false);
-      }, 1000);
+      } catch (err) {
+        console.error('Failed to fetch quest details:', err);
+        setApiStatus({ 
+          connected: false, 
+          message: 'Unable to connect to SolQuest API. Using cached data.' 
+        });
+        
+        // If we have retries left and no quest data, try again in 3 seconds
+        if (retryCount < 3 && !quest) {
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+            // This will trigger the effect to run again
+          }, 3000);
+        }
+      }
     };
     
-    fetchQuest();
-  }, [questId]);
+    loadQuestData();
+  }, [questId, fetchQuestById, retryCount, quest]);
 
-  const handleSubtaskComplete = (subtaskId) => {
-    if (!connected) {
-      alert('Please connect your wallet to complete this subtask');
+  const handleSubtaskComplete = async (subtaskId) => {
+    if (!connected || !isAuthenticated) {
+      alert('Please connect your wallet and sign in to complete this subtask');
       return;
     }
 
-    setSubtasks(prevSubtasks => 
-      prevSubtasks.map(subtask => 
-        subtask.id === subtaskId ? { ...subtask, completed: true } : subtask
-      )
-    );
-    
-    // Update progress after subtask completion
-    setTimeout(() => {
-      const updatedProgress = calculateProgress();
-      if (updatedProgress === 100) {
-        showCelebration();
+    try {
+      // Send completion data to the backend
+      const result = await completeQuestStep(quest.id, subtaskId, {
+        walletAddress: publicKey.toString(),
+        timestamp: new Date().toISOString()
+      });
+      
+      if (result && result.success) {
+        // Update local state to reflect completion
+        setSubtasks(prevSubtasks => 
+          prevSubtasks.map(subtask => 
+            subtask.id === subtaskId ? { ...subtask, completed: true } : subtask
+          )
+        );
+        
+        // Update progress after subtask completion
+        setTimeout(() => {
+          const updatedProgress = calculateProgress();
+          if (updatedProgress === 100) {
+            showCelebration();
+          }
+        }, 100);
+        
+        // Show offline mode notification if applicable
+        if (result.offline) {
+          alert('Your progress has been saved locally. It will be synchronized with the server when you reconnect.');
+        }
       }
-    }, 100);
+    } catch (err) {
+      console.error('Error completing subtask:', err);
+      alert('Failed to complete subtask. Please try again.');
+    }
   };
   
 
@@ -328,8 +140,40 @@ const QuestDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-solana-purple"></div>
+      <div className="container mx-auto px-4 py-8">
+        <Link to="/quests" className="text-solana-purple hover:text-solana-green mb-4 inline-block">
+          ← Back to Quests
+        </Link>
+        
+        <div className="flex flex-col justify-center items-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-solana-purple mb-4"></div>
+          <p className="text-gray-400">Loading quest details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !quest) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Link to="/quests" className="text-solana-purple hover:text-solana-green mb-4 inline-block">
+          ← Back to Quests
+        </Link>
+        
+        <div className="bg-dark-card rounded-lg p-6 shadow-lg">
+          <h2 className="text-xl font-bold mb-4 text-red-400">Error Loading Quest</h2>
+          <p className="mb-4 text-gray-300">{error.message || 'Failed to connect to the SolQuest API'}</p>
+          <p className="mb-4 text-gray-400 text-sm">No cached data is available for this quest. Please check your internet connection.</p>
+          <button 
+            onClick={() => setRetryCount(prev => prev + 1)}
+            className="bg-solana-purple text-white px-4 py-2 rounded-lg hover:bg-solana-purple/80 mr-4"
+          >
+            Try Again
+          </button>
+          <Link to="/quests" className="text-solana-purple hover:text-solana-green">
+            Back to Quests
+          </Link>
+        </div>
       </div>
     );
   }
@@ -337,11 +181,15 @@ const QuestDetail = () => {
   if (!quest) {
     return (
       <div className="container mx-auto px-4 py-8">
+        <Link to="/quests" className="text-solana-purple hover:text-solana-green mb-4 inline-block">
+          ← Back to Quests
+        </Link>
+        
         <div className="bg-dark-card rounded-lg p-6 shadow-lg">
           <h2 className="text-xl font-bold mb-4">Quest not found</h2>
           <p className="mb-4">The quest you're looking for doesn't exist.</p>
           <Link to="/quests" className="text-solana-purple hover:text-solana-green">
-            ← Back to Quests
+            Back to Quests
           </Link>
         </div>
       </div>
@@ -353,6 +201,27 @@ const QuestDetail = () => {
       <Link to="/quests" className="text-solana-purple hover:text-solana-green mb-4 inline-block">
         ← Back to Quests
       </Link>
+      
+      {/* API Status Banner */}
+      {!apiStatus.connected && (
+        <div className="mb-4 p-3 bg-yellow-800/50 border border-yellow-700 rounded-lg">
+          <div className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-yellow-200">{apiStatus.message}</span>
+          </div>
+          <div className="mt-2 flex justify-between items-center">
+            <span className="text-xs text-yellow-200/70">You're viewing previously loaded data. Some features may be limited.</span>
+            <button 
+              onClick={() => setRetryCount(prev => prev + 1)}
+              className="text-xs bg-yellow-700 hover:bg-yellow-600 text-white px-2 py-1 rounded"
+            >
+              Try Reconnecting
+            </button>
+          </div>
+        </div>
+      )}
       
       <div className="bg-dark-card rounded-lg overflow-hidden shadow-lg mb-8">
         <div className="relative">
@@ -370,7 +239,14 @@ const QuestDetail = () => {
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-white mb-2">{quest.title}</h1>
+              <div className="flex items-center mb-2">
+                <h1 className="text-2xl font-bold text-white">{quest.title}</h1>
+                {!apiStatus.connected && (
+                  <span className="ml-2 text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                    Cached Data
+                  </span>
+                )}
+              </div>
               <p className="text-gray-300 mb-4">{quest.description}</p>
               {quest.partner && (
                 <div className="flex items-center mb-4">
@@ -470,11 +346,27 @@ const QuestDetail = () => {
               </div>
               <button 
                 className="bg-gradient-to-r from-solana-purple to-solana-green text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity w-full md:w-auto"
-                onClick={() => {
-                  if (quest.id === 'solquest-project') {
-                    alert(`Congratulations! You've earned ${quest.reward.split(' + ')[0]} SOL and an exclusive SolQuest NFT has been sent to your wallet!`);
-                  } else {
-                    alert(`Reward of ${quest.reward} has been sent to your wallet!`);
+                onClick={async () => {
+                  if (!connected || !isAuthenticated) {
+                    alert('Please connect your wallet and sign in to claim your reward');
+                    return;
+                  }
+                  
+                  if (!apiStatus.connected) {
+                    alert('You are currently in offline mode. Please reconnect to the internet to claim your reward.');
+                    return;
+                  }
+                  
+                  try {
+                    // In a real implementation, this would call the API to claim the reward
+                    if (quest.id === 'solquest-project') {
+                      alert(`Congratulations! You've earned ${quest.reward.split(' + ')[0]} SOL and an exclusive SolQuest NFT has been sent to your wallet!`);
+                    } else {
+                      alert(`Reward of ${quest.reward} has been sent to your wallet!`);
+                    }
+                  } catch (err) {
+                    console.error('Error claiming reward:', err);
+                    alert('Failed to claim reward. Please try again.');
                   }
                 }}
               >

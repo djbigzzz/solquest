@@ -40,3 +40,5 @@ update-*.js
 
 # MongoDB memory server
 .mongodb-data
+
+.vercel

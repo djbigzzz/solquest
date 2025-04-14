@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Quest = require('../models/quest.model');
 const QuestProgress = require('../models/questProgress.model');
 
@@ -18,12 +19,18 @@ const getAllQuests = async (req, res) => {
 };
 
 /**
- * Get quest by ID
+ * Get quest by ID or slug
  * @route GET /api/quests/:id
  */
 const getQuestById = async (req, res) => {
   try {
-    const quest = await Quest.findById(req.params.id);
+    // Try to find by slug first (for string IDs like 'solana-basics')
+    let quest = await Quest.findOne({ slug: req.params.id });
+    
+    // If not found by slug, try to find by MongoDB ID
+    if (!quest && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      quest = await Quest.findById(req.params.id);
+    }
     
     if (!quest) {
       return res.status(404).json({
@@ -87,7 +94,13 @@ const createQuest = async (req, res) => {
  */
 const updateQuest = async (req, res) => {
   try {
-    const quest = await Quest.findById(req.params.id);
+    // Find quest by slug first, then by ID
+    let quest = await Quest.findOne({ slug: req.params.id });
+    
+    // If not found by slug, try to find by MongoDB ID
+    if (!quest && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      quest = await Quest.findById(req.params.id);
+    }
     
     if (!quest) {
       return res.status(404).json({
@@ -134,7 +147,13 @@ const updateQuest = async (req, res) => {
  */
 const deleteQuest = async (req, res) => {
   try {
-    const quest = await Quest.findById(req.params.id);
+    // Find quest by slug first, then by ID
+    let quest = await Quest.findOne({ slug: req.params.id });
+    
+    // If not found by slug, try to find by MongoDB ID
+    if (!quest && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      quest = await Quest.findById(req.params.id);
+    }
     
     if (!quest) {
       return res.status(404).json({
@@ -162,8 +181,13 @@ const deleteQuest = async (req, res) => {
  */
 const startQuest = async (req, res) => {
   try {
-    // Check if quest exists
-    const quest = await Quest.findById(req.params.id);
+    // Check if quest exists - try by slug first, then by ID
+    let quest = await Quest.findOne({ slug: req.params.id });
+    
+    // If not found by slug, try to find by MongoDB ID
+    if (!quest && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      quest = await Quest.findById(req.params.id);
+    }
     
     if (!quest) {
       return res.status(404).json({
@@ -210,8 +234,13 @@ const startQuest = async (req, res) => {
  */
 const completeQuest = async (req, res) => {
   try {
-    // Check if quest exists
-    const quest = await Quest.findById(req.params.id);
+    // Check if quest exists - try by slug first, then by ID
+    let quest = await Quest.findOne({ slug: req.params.id });
+    
+    // If not found by slug, try to find by MongoDB ID
+    if (!quest && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      quest = await Quest.findById(req.params.id);
+    }
     
     if (!quest) {
       return res.status(404).json({

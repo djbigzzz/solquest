@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { toast } from 'react-hot-toast';
+import { referralAPI } from '../services/api';
+import useAuth from './useAuth';
 
 /**
  * Custom hook to manage user referrals
@@ -12,41 +14,62 @@ const useReferrals = () => {
   const [referralLink, setReferralLink] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Generate or fetch referral code when wallet connects
-  useEffect(() => {
-    if (publicKey) {
-      // In a real app, you would fetch this from your backend
-      // For now, we'll generate a code based on the wallet address
-      const walletAddress = publicKey.toString();
-      const code = walletAddress.substring(0, 8); // First 8 chars of wallet address
-      setReferralCode(code);
-      
-      // Create referral link
-      const baseUrl = window.location.origin;
-      const link = `${baseUrl}?ref=${code}`;
-      setReferralLink(link);
-      
-      // Simulate fetching referral count from backend
-      fetchReferralCount(code);
-    } else {
+  const { isAuthenticated } = useAuth();
+
+  // Fetch referral code from backend
+  const fetchReferralCode = useCallback(async () => {
+    if (!publicKey || !isAuthenticated) {
       setReferralCode('');
       setReferralLink('');
       setReferralCount(0);
+      return;
     }
-  }, [publicKey]);
-
-  // Simulate fetching referral count from backend
-  const fetchReferralCount = (code) => {
-    setIsLoading(true);
     
-    // Mock API call - in a real app, this would be a backend call
-    setTimeout(() => {
-      // Generate a random number between 0 and 20 for demo purposes
-      const count = Math.floor(Math.random() * 21);
-      setReferralCount(count);
+    try {
+      setIsLoading(true);
+      const response = await referralAPI.getReferralCode();
+      
+      if (response && response.code) {
+        setReferralCode(response.code);
+        
+        // Create referral link
+        const baseUrl = window.location.origin;
+        const link = `${baseUrl}?ref=${response.code}`;
+        setReferralLink(link);
+        
+        // Fetch referral stats
+        fetchReferralStats();
+      }
+    } catch (error) {
+      console.error('Error fetching referral code:', error);
+      toast.error('Failed to load your referral code');
+    } finally {
       setIsLoading(false);
-    }, 1000);
-  };
+    }
+  }, [publicKey, isAuthenticated]);
+  
+  // Generate or fetch referral code when wallet connects and user is authenticated
+  useEffect(() => {
+    fetchReferralCode();
+  }, [fetchReferralCode, publicKey, isAuthenticated]);
+
+  // Fetch referral stats from backend
+  const fetchReferralStats = useCallback(async () => {
+    if (!publicKey || !isAuthenticated) return;
+    
+    try {
+      setIsLoading(true);
+      const response = await referralAPI.getReferralStats();
+      
+      if (response) {
+        setReferralCount(response.count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching referral stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [publicKey, isAuthenticated]);
 
   // Copy referral link to clipboard
   const copyReferralLink = () => {
@@ -62,24 +85,31 @@ const useReferrals = () => {
     }
   };
 
-  // Check if user came from a referral link
-  const checkAndProcessReferral = () => {
+  // Check if user came from a referral link and process it
+  const checkAndProcessReferral = useCallback(async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const refCode = urlParams.get('ref');
     
-    if (refCode && publicKey) {
-      // In a real app, you would send this to your backend to credit the referrer
-      console.log(`User with wallet ${publicKey.toString()} was referred by code: ${refCode}`);
-      
-      // Remove referral parameter from URL without page refresh
-      const newUrl = window.location.pathname + window.location.hash;
-      window.history.replaceState({}, document.title, newUrl);
-      
-      return true;
+    if (refCode && publicKey && isAuthenticated) {
+      try {
+        // Send referral code to backend
+        await referralAPI.applyReferralCode(refCode);
+        toast.success('Referral applied successfully!');
+        
+        // Remove referral parameter from URL without page refresh
+        const newUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, document.title, newUrl);
+        
+        return true;
+      } catch (error) {
+        console.error('Error applying referral code:', error);
+        toast.error('Failed to apply referral code');
+        return false;
+      }
     }
     
     return false;
-  };
+  }, [publicKey, isAuthenticated]);
 
   return {
     referralCode,
@@ -87,7 +117,9 @@ const useReferrals = () => {
     referralLink,
     isLoading,
     copyReferralLink,
-    checkAndProcessReferral
+    checkAndProcessReferral,
+    fetchReferralCode,
+    fetchReferralStats
   };
 };
 

@@ -1,18 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import useSolanaWallet from '../hooks/useWallet';
+import useQuests from '../hooks/useQuests';
+import useAuth from '../hooks/useAuth';
 import { Connection, clusterApiUrl, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 
 function QuestCard({ quest }) {
   const { id, title, description, reward, xp, progress, image, category, featured, hasNFT, partner } = quest;
   const { connected, publicKey, sendTransaction } = useSolanaWallet();
+  const { isAuthenticated } = useAuth();
+  const { startQuest, completeQuest, loading } = useQuests();
   const [isLoading, setIsLoading] = useState(false);
   const [userProgress, setUserProgress] = useState(progress || 0);
   
+  // Sync loading state with the useQuests hook
+  useEffect(() => {
+    setIsLoading(loading);
+  }, [loading]);
+  
   // Function to start or continue a quest
   const handleQuestAction = async () => {
-    if (!connected) {
-      alert('Please connect your wallet to start this quest');
+    if (!connected || !isAuthenticated) {
+      alert('Please connect your wallet and sign in to start this quest');
       return;
     }
     
@@ -21,31 +30,41 @@ function QuestCard({ quest }) {
     try {
       // If quest is already in progress, update progress
       if (userProgress > 0 && userProgress < 100) {
-        // Simulate quest progress update
-        setTimeout(() => {
+        // Try to complete the quest via the API
+        const result = await completeQuest(id, {
+          walletAddress: publicKey.toString(),
+          timestamp: new Date().toISOString()
+        });
+        
+        if (result && result.success) {
           const newProgress = Math.min(userProgress + 25, 100);
           setUserProgress(newProgress);
-          setIsLoading(false);
           
-          // If quest is completed, simulate reward payout
+          // If quest is completed, handle reward payout
           if (newProgress === 100) {
             simulateRewardPayout();
           }
-        }, 1500);
+        }
       } else {
-        // Start a new quest by registering on-chain (simulated)
-        setTimeout(() => {
+        // Start a new quest via the API
+        const result = await startQuest(id, {
+          walletAddress: publicKey.toString(),
+          timestamp: new Date().toISOString()
+        });
+        
+        if (result && result.success) {
           setUserProgress(25);
-          setIsLoading(false);
-        }, 1500);
+        }
       }
     } catch (error) {
       console.error('Error with quest action:', error);
+      alert('Failed to perform quest action. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
   
-  // Simulate sending a reward to the user's wallet
+  // Handle reward payout to the user's wallet
   const simulateRewardPayout = async () => {
     if (id === 'solquest-project') {
       alert(`Congratulations! You've completed the "${title}" quest and earned ${reward.split(' + ')[0]} SOL and an exclusive NFT!`);
@@ -57,6 +76,8 @@ function QuestCard({ quest }) {
     // For demo purposes, we're just showing what it would look like
     /*
     try {
+      // This would be integrated with the backend API to trigger the reward
+      // For now, we're just simulating the transaction
       const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
       const transaction = new Transaction().add(
         SystemProgram.transfer({

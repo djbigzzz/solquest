@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import QuestCard from '../components/QuestCard';
 import { useWallet } from '@solana/wallet-adapter-react';
+import useQuests from '../hooks/useQuests';
+import useAuth from '../hooks/useAuth';
 
-// Import quest images
+// Import quest images for fallback
 import solanaBasicsImg from '../assets/images/solana-basics.svg';
 import solquestProjectImg from '../assets/images/solquest-project.svg';
 import defiExplorerImg from '../assets/images/defi-explorer.svg';
 import nftCreationImg from '../assets/images/nft-creation.svg';
 import stakingBasicsImg from '../assets/images/staking-basics.svg';
 
-// Import partner logos
+// Import partner logos for fallback
 import phantomLogo from '../assets/images/partners/phantom.svg';
 import solflareLogo from '../assets/images/partners/solflare.svg';
 import magicedenLogo from '../assets/images/partners/magiceden.svg';
@@ -19,63 +21,70 @@ import marinadeLogo from '../assets/images/partners/marinade.svg';
 function QuestsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [isLoading, setIsLoading] = useState(true);
   const { connected } = useWallet();
+  const { isAuthenticated } = useAuth();
+  
+  // Use our custom hook for quests data
+  const { quests, loading: isLoading, error, fetchAllQuests } = useQuests();
+  const [apiStatus, setApiStatus] = useState({ connected: false, message: '' });
   
   const categories = ['All', 'DeFi', 'NFT', 'Staking', 'Security', 'Community', 'Development', 'Education'];
 
-  // Simulate loading data from API
+  // Fetch quests data from API when component mounts
   useEffect(() => {
-    setIsLoading(true);
-    // Simulate API call delay
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    const loadQuests = async () => {
+      try {
+        await fetchAllQuests();
+        setApiStatus({ connected: true, message: 'Connected to SolQuest API' });
+      } catch (err) {
+        console.error('Failed to fetch quests:', err);
+        setApiStatus({ 
+          connected: false, 
+          message: 'Unable to connect to SolQuest API. Using cached data.' 
+        });
+      }
+    };
     
-    return () => clearTimeout(timer);
-  }, []);
+    loadQuests();
+  }, [fetchAllQuests]);
   
-  // Sample quests data - only two quests as requested
-  const questsData = [
-    {
-      id: 'solana-basics',
-      title: 'Solana Basics',
-      description: 'Complete essential Solana tasks: Follow Solana on X and have at least 0.1 SOL in your wallet',
-      reward: '0.5 SOL',
-      image: solanaBasicsImg,
-      category: 'Education',
-      completed: false,
-      progress: connected ? 35 : 0,
-      featured: true,
-      xp: 250,
-      partner: {
-        name: 'Phantom',
-        logo: phantomLogo,
-        website: 'https://phantom.app'
-      }
-    },
-    {
-      id: 'solquest-project',
-      title: 'SolQuest Project',
-      description: 'Join the SolQuest community: Follow on X, join Discord, and mint the SolQuest Explorer NFT',
-      reward: '0.75 SOL + Exclusive NFT',
-      image: solquestProjectImg,
-      category: 'Community',
-      completed: false,
-      progress: connected ? 15 : 0,
-      featured: true,
-      hasNFT: true,
-      xp: 350,
-      partner: {
-        name: 'SolQuest',
-        logo: solquestProjectImg,
-        website: 'https://solquest.io'
-      }
-    }
-  ];
+  // Map quest images and partner logos based on quest data from API
+  const getQuestImage = (questId) => {
+    const imageMap = {
+      'solana-basics': solanaBasicsImg,
+      'solquest-project': solquestProjectImg,
+      'defi-explorer': defiExplorerImg,
+      'nft-creation': nftCreationImg,
+      'staking-basics': stakingBasicsImg
+    };
+    return imageMap[questId] || solanaBasicsImg; // Default to solana basics image
+  };
+  
+  const getPartnerLogo = (partnerName) => {
+    const logoMap = {
+      'Phantom': phantomLogo,
+      'Solflare': solflareLogo,
+      'Magic Eden': magicedenLogo,
+      'Orca': orcaLogo,
+      'Marinade': marinadeLogo,
+      'SolQuest': solquestProjectImg
+    };
+    return logoMap[partnerName] || phantomLogo; // Default to phantom logo
+  };
+  
+  // Enhance quests with images and progress data
+  const enhancedQuests = quests.map(quest => ({
+    ...quest,
+    image: getQuestImage(quest.id),
+    progress: connected && isAuthenticated ? (quest.userProgress || 0) : 0,
+    partner: quest.partner ? {
+      ...quest.partner,
+      logo: getPartnerLogo(quest.partner.name)
+    } : null
+  }));
 
   // Filter quests based on search term and category
-  const filteredQuests = questsData.filter(quest => {
+  const filteredQuests = enhancedQuests.filter(quest => {
     const matchesSearch = quest.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          quest.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || quest.category === selectedCategory;
@@ -108,6 +117,27 @@ function QuestsPage() {
         </div>
       </div>
 
+      {/* API Status Banner */}
+      {!apiStatus.connected && !isLoading && (
+        <div className="mb-4 p-3 bg-yellow-800/50 border border-yellow-700 rounded-lg">
+          <div className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-yellow-200">{apiStatus.message}</span>
+          </div>
+          <div className="mt-2 flex justify-between items-center">
+            <span className="text-xs text-yellow-200/70">You're viewing previously loaded data. Some features may be limited.</span>
+            <button 
+              onClick={() => fetchAllQuests()}
+              className="text-xs bg-yellow-700 hover:bg-yellow-600 text-white px-2 py-1 rounded"
+            >
+              Try Reconnecting
+            </button>
+          </div>
+        </div>
+      )}
+      
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map(i => (
@@ -136,8 +166,29 @@ function QuestsPage() {
           </div>
 
           {/* All Quests Section */}
-          <h2 className="text-2xl font-semibold text-white mb-4">All Quests</h2>
-          {filteredQuests.length === 0 ? (
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-white">All Quests</h2>
+            {!apiStatus.connected && quests.length > 0 && (
+              <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                Cached Data
+              </span>
+            )}
+          </div>
+          {error && !quests.length ? (
+            <div className="text-center py-12">
+              <div className="bg-red-900/30 border border-red-800 rounded-lg p-4 mb-4">
+                <p className="text-red-300 text-lg">Error loading quests</p>
+                <p className="text-gray-400 mt-2">{error.message || 'Failed to connect to the SolQuest API'}</p>
+                <p className="text-gray-400 mt-2 text-sm">No cached data is available. Please check your internet connection.</p>
+                <button 
+                  onClick={() => fetchAllQuests()}
+                  className="mt-4 bg-solana-purple text-white px-4 py-2 rounded-lg hover:bg-solana-purple/80"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          ) : filteredQuests.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-400 text-xl">No quests found. Try adjusting your search.</p>
               <button 
