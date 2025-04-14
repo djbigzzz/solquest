@@ -152,62 +152,86 @@ const TwitterFollowQuest = () => {
       </div>
       
       {/* Task Steps */}
-      <div className="px-4 py-3 border-t border-gray-800">
-        <div className="flex justify-between mb-4">
+      <div className="px-4 py-4 border-t border-gray-800">
+        <div className="flex flex-col space-y-4">
+          {/* Task 1 */}
           <div 
-            className={`flex items-center justify-center w-8 h-8 rounded-full ${activeTask === 1 ? 'bg-blue-500' : completed ? 'bg-green-500' : 'bg-gray-700'} text-white`}
+            className={`flex items-center p-3 rounded-lg ${activeTask === 1 ? 'bg-blue-500/10 border border-blue-500/30' : completed ? 'bg-green-500/10 border border-green-500/30' : 'bg-gray-800 hover:bg-gray-700'} transition-colors cursor-pointer`}
             onClick={() => setActiveTask(1)}
           >
-            {completed ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            )}
+            <div className={`flex items-center justify-center w-6 h-6 rounded-full ${completed ? 'bg-green-500' : activeTask === 1 ? 'bg-blue-500' : 'bg-gray-700'} text-white mr-3`}>
+              {completed ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <span className="text-xs">1</span>
+              )}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-white">Follow SolQuest on Twitter</h3>
+              <p className="text-xs text-gray-400 mt-1">Stay updated with news and announcements</p>
+            </div>
+            <div className="ml-2">
+              {completed ? (
+                <span className="text-xs text-green-400">Completed</span>
+              ) : started ? (
+                <span className="text-xs text-yellow-400">In Progress</span>
+              ) : (
+                <span className="text-xs text-blue-400">Start</span>
+              )}
+            </div>
           </div>
-          <div className="flex-1 mx-2 border-t border-gray-700 self-center"></div>
+
+          {/* Task 2 */}
           <div 
-            className={`flex items-center justify-center w-8 h-8 rounded-full ${activeTask === 2 ? 'bg-blue-500' : 'bg-gray-700'} text-white`}
+            className={`flex items-center p-3 rounded-lg ${activeTask === 2 ? 'bg-blue-500/10 border border-blue-500/30' : progress >= 50 && completed ? 'bg-green-500/10 border border-green-500/30' : 'bg-gray-800 hover:bg-gray-700'} ${!started && 'opacity-60 cursor-not-allowed'} transition-colors ${started ? 'cursor-pointer' : ''}`}
             onClick={() => started && setActiveTask(2)}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+            <div className={`flex items-center justify-center w-6 h-6 rounded-full ${progress >= 50 && completed ? 'bg-green-500' : activeTask === 2 ? 'bg-blue-500' : 'bg-gray-700'} text-white mr-3`}>
+              {progress >= 50 && completed ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <span className="text-xs">2</span>
+              )}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-white">Verify Follow</h3>
+              <p className="text-xs text-gray-400 mt-1">Verify that you've followed SolQuest</p>
+            </div>
+            <div className="ml-2">
+              {!started ? (
+                <span className="text-xs text-gray-500">Locked</span>
+              ) : completed ? (
+                <span className="text-xs text-green-400">Completed</span>
+              ) : (
+                <span className="text-xs text-blue-400">Verify</span>
+              )}
+            </div>
           </div>
-          <div className="flex-1 mx-2 border-t border-gray-700 self-center"></div>
+
+          {/* Task 3 */}
           <div 
-            className={`flex items-center justify-center w-8 h-8 rounded-full ${activeTask === 3 ? 'bg-blue-500' : 'bg-gray-700'} text-white`}
-            onClick={() => started && completed && setActiveTask(3)}
+            className={`flex items-center p-3 rounded-lg ${activeTask === 3 ? 'bg-blue-500/10 border border-blue-500/30' : completed ? 'bg-green-500/10 border border-green-500/30' : 'bg-gray-800 hover:bg-gray-700'} ${!completed && 'opacity-60 cursor-not-allowed'} transition-colors ${completed ? 'cursor-pointer' : ''}`}
+            onClick={() => completed && setActiveTask(3)}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <div className={`flex items-center justify-center w-6 h-6 rounded-full ${completed && activeTask === 3 ? 'bg-green-500' : activeTask === 3 ? 'bg-blue-500' : 'bg-gray-700'} text-white mr-3`}>
+              <span className="text-xs">3</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-white">Claim Your Rewards</h3>
+              <p className="text-xs text-gray-400 mt-1">Get points for completing this quest</p>
+            </div>
+            <div className="ml-2">
+              {!completed ? (
+                <span className="text-xs text-gray-500">Locked</span>
+              ) : (
+                <span className="text-xs text-blue-400">Claim</span>
+              )}
+            </div>
           </div>
-        </div>
-        
-        {/* Active Task Content */}
-        <div className="mb-4">
-          {activeTask === 1 && (
-            <div>
-              <h3 className="text-white font-medium mb-2">Join</h3>
-              <p className="text-sm text-gray-400 mb-3">Follow SolQuest on Twitter to stay updated with the latest news.</p>
-            </div>
-          )}
-          {activeTask === 2 && (
-            <div>
-              <h3 className="text-white font-medium mb-2">Verify</h3>
-              <p className="text-sm text-gray-400 mb-3">Verify that you've followed SolQuest on Twitter.</p>
-            </div>
-          )}
-          {activeTask === 3 && (
-            <div>
-              <h3 className="text-white font-medium mb-2">Claim</h3>
-              <p className="text-sm text-gray-400 mb-3">Claim your rewards for completing this quest.</p>
-            </div>
-          )}
         </div>
       </div>
 
@@ -238,12 +262,16 @@ const TwitterFollowQuest = () => {
       </div>
       
       {/* Action Button */}
-      <div className="px-4 pb-4 mt-2">
+      <div className="px-4 pb-4">
         {!completed ? (
           <button
             onClick={started ? handleVerifyQuest : handleStartQuest}
             disabled={loading || !connected || !isAuthenticated}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+            className={`w-full py-3 px-4 rounded-lg font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center
+              ${activeTask === 1 && !started ? 'bg-blue-600 hover:bg-blue-700 text-white' : 
+              activeTask === 2 && started ? 'bg-blue-600 hover:bg-blue-700 text-white' : 
+              activeTask === 3 && completed ? 'bg-blue-600 hover:bg-blue-700 text-white' : 
+              'bg-blue-600 hover:bg-blue-700 text-white'}`}
           >
             {loading ? (
               <span className="flex items-center">
@@ -251,41 +279,28 @@ const TwitterFollowQuest = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Loading...
+                Processing...
               </span>
             ) : activeTask === 1 ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Follow on Twitter</span>
-              </>
+              <span>
+                {!started ? "Follow on Twitter" : "Already Following"}
+              </span>
             ) : activeTask === 2 ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Verify Follow</span>
-              </>
+              <span>Verify Twitter Follow</span>
             ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Claim Rewards</span>
-              </>
+              <span>Claim {xpReward} Points</span>
             )}
           </button>
         ) : (
-          <button
-            className="w-full bg-green-600 text-white py-2 px-4 rounded flex items-center justify-center"
-            disabled
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            Completed
-          </button>
+          <div className="bg-green-900/20 border border-green-700/30 rounded-lg p-3 text-center">
+            <div className="flex items-center justify-center text-green-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">Quest Completed!</span>
+            </div>
+            <p className="text-xs text-green-300/70 mt-1">You've earned {xpReward} points</p>
+          </div>
         )}
       </div>
       
