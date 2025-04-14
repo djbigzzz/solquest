@@ -20,7 +20,7 @@ function QuestsPage() {
       ) : null}
       
       {/* Main Quest Section */}
-      <div className="max-w-md mx-auto space-y-6">
+      <div className="max-w-sm mx-auto space-y-6">
         <div className="w-full">
           <TwitterFollowQuest />
         </div>
