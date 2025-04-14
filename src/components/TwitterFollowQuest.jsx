@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { progressAPI } from '../services/api';
 import useAuth from '../hooks/useAuth';
+import axios from 'axios';
 
 const TwitterFollowQuest = () => {
   const { publicKey, connected } = useWallet();
@@ -56,6 +57,14 @@ const TwitterFollowQuest = () => {
     try {
       setLoading(true);
       setError('');
+
+      // Check if user has connected Twitter account
+      const response = await axios.get(`/api/user/social?wallet=${publicKey.toString()}`);
+      if (!response.data?.twitter) {
+        // Redirect to social connections page if Twitter is not connected
+        window.location.href = '/social-connections';
+        return;
+      }
 
       // Open Twitter in a new tab
       window.open('https://twitter.com/SolQuestApp', '_blank');
@@ -122,32 +131,37 @@ const TwitterFollowQuest = () => {
 
   // Render quest card
   return (
-    <div className="bg-black rounded-lg overflow-hidden shadow-md border border-gray-800 hover:border-purple-500/30 transition-all">
+    <div className="bg-blue-900/30 rounded-xl overflow-hidden shadow-xl border-4 border-blue-600/50 transform hover:scale-102 transition-all">
       {/* Quest Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-900">
+      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-800 to-purple-800">
         <div className="flex items-center">
-          <div className="bg-gray-800 text-xs text-gray-400 px-2 py-1 rounded mr-2">Basic Quest</div>
-          <div className="flex items-center text-xs text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div className="bg-blue-700 text-xs text-white px-2 py-1 rounded-full font-bold mr-2 shadow-inner">⭐ Basic Quest</div>
+          <div className="flex items-center text-xs text-white font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1 text-yellow-300" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
             </svg>
             Limited Time
           </div>
         </div>
-        <div className="bg-blue-900/40 rounded px-2 py-1">
-          <span className="text-xs font-medium text-blue-300">Social</span>
-        </div>
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg">Social</div>
       </div>
 
       {/* Quest Title */}
-      <div className="px-4 pt-3 pb-2">
-        <h2 className="text-xl font-bold text-white">Twitter Follow</h2>
-        <p className="text-sm text-gray-400 mt-1">Follow SolQuest on Twitter to stay updated with the latest announcements and rewards.</p>
-        <div className="mt-2 flex items-center">
-          <div className="w-full bg-gray-800 h-1 rounded-full overflow-hidden">
-            <div className="bg-blue-500 h-full" style={{ width: `${progress}%` }}></div>
+      <div className="px-4 pt-4 pb-3 bg-gradient-to-b from-blue-900/50 to-blue-800/10">
+        <h2 className="text-xl font-bold text-white drop-shadow-md flex items-center">
+          <span className="bg-blue-600 text-white p-1 rounded-lg mr-2 shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </span>
+          TWITTER QUEST
+        </h2>
+        <p className="text-blue-200 text-sm mt-2 ml-10 italic">Follow SolQuest on Twitter to stay updated with the latest announcements and rewards.</p>
+        <div className="mt-3 flex items-center">
+          <div className="w-full bg-black/30 h-2 rounded-full overflow-hidden shadow-inner">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full shadow-lg" style={{ width: `${progress}%` }}></div>
           </div>
-          <span className="ml-2 text-xs text-gray-400">{progress}%</span>
+          <span className="ml-2 text-xs font-bold text-white bg-blue-700 px-2 py-1 rounded-full">{progress}%</span>
         </div>
       </div>
       

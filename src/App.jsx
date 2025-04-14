@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import QuestsPage from './pages/QuestsPage';
 import ProjectQuestsPage from './pages/ProjectQuestsPage';
 import ProfilePage from './pages/ProfilePage';
+import SocialConnectionsPage from './pages/SocialConnectionsPage';
 import WalletContextProvider from './context/WalletContextProvider';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
               <Route path="/quests" element={<QuestsPage />} />
               <Route path="/project/:projectSlug" element={<ProjectQuestsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/social-connections" element={<SocialConnectionsPage />} />
             </Routes>
           </main>
         </div>
