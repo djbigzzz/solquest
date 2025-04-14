@@ -24,6 +24,7 @@
     "@solana/wallet-adapter-wallets": "^0.19.33",
     "@solana/web3.js": "^1.98.0",
     "canvas-confetti": "^1.9.3",
+    "mongodb": "^6.15.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hot-toast": "^2.5.2",

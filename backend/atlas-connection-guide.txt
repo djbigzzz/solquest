@@ -1,0 +1,25 @@
+MONGODB ATLAS CONNECTION GUIDE
+
+The MongoDB Atlas connection string should look like this:
+
+mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/solquest?retryWrites=true&w=majority
+
+Where:
+- username: your MongoDB Atlas username
+- password: your MongoDB Atlas password
+- xxxxx: your specific cluster identifier
+
+Common issues:
+1. The cluster name might be incorrect - make sure it's exactly as shown in your Atlas dashboard
+2. Your IP address might not be whitelisted in MongoDB Atlas
+3. There might be special characters in your password that need URL encoding
+
+Check on the MongoDB Atlas dashboard:
+1. Click "Connect" on your cluster
+2. Select "Connect your application"
+3. Copy the exact connection string provided
+4. Replace <password> with your actual password
+5. Replace "myFirstDatabase" with "solquest"
+
+Example of a correctly formatted connection string:
+mongodb+srv://jsmith:myP@ssw0rd@cluster0.a1b2c.mongodb.net/solquest?retryWrites=true&w=majority

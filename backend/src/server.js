@@ -4,6 +4,7 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const connectDB = require('./config/database');
+const { connectMemoryDB } = require('./config/database-memory');
 
 // Load environment variables
 dotenv.config();
@@ -11,17 +12,37 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
-// Connect to MongoDB
-connectDB();
+// Connect to database - with better handling for serverless environment
+let dbConnected = false;
+
+const connectToDatabase = async () => {
+  if (dbConnected) return; // Prevent multiple connections
+  
+  if (process.env.USE_MEMORY_DB === 'true') {
+    // Use in-memory database for development
+    await connectMemoryDB();
+  } else {
+    // Use MongoDB Atlas
+    await connectDB();
+  }
+  
+  dbConnected = true;
+  console.log('Database connection established');
+};
+
+// Initialize database connection
+connectToDatabase().catch(err => {
+  console.error('Database connection error:', err.message);
+});
 
 // Middleware
 app.use(helmet()); // Security headers
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL_PROD 
-    : process.env.FRONTEND_URL,
+const corsOptions = {
+  origin: [process.env.FRONTEND_URL, 'https://solquest.io', 'http://localhost:3000'],
+  optionsSuccessStatus: 200,
   credentials: true
-}));
+};
+app.use(cors(corsOptions));
 app.use(express.json()); // Parse JSON bodies
 app.use(morgan('dev')); // HTTP request logger
 
@@ -62,6 +83,14 @@ app.use((req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
+
+// For local development, listen on the port
+// For Vercel, we'll export the app directly
+if (process.env.NODE_ENV !== 'production' || process.env.VERCEL_ENV === undefined) {
+  app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+  });
+}
+
+// Export the app for Vercel
+module.exports = app;
