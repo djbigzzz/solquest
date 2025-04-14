@@ -30,24 +30,42 @@ function ProfilePage() {
       if (connected && publicKey) {
         try {
           console.log('Fetching SOL balance for wallet:', publicKey.toString());
-          // For development/demo purposes, use a mock balance
-          const mockBalance = 42.69;
-          console.log('Setting mock balance:', mockBalance);
-          setBalance(mockBalance);
+          // Try multiple endpoints to ensure we get a balance
+          try {
+            // First try official Solana endpoint
+            const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+            const walletBalance = await connection.getBalance(publicKey);
+            const solBalance = walletBalance / LAMPORTS_PER_SOL;
+            console.log('SOL balance from primary endpoint:', solBalance);
+            setBalance(solBalance);
+            return; // Exit if successful
+          } catch (primaryError) {
+            console.error('Primary endpoint error:', primaryError);
+            // Continue to fallback
+          }
           
-          // Uncomment for production to fetch real balance
-          /*
-          // Try to connect to mainnet
-          const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
-          const walletBalance = await connection.getBalance(publicKey);
-          const solBalance = walletBalance / LAMPORTS_PER_SOL;
-          console.log('SOL balance:', solBalance);
+          try {
+            // Try cluster API endpoint as fallback
+            const fallbackConnection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
+            const fallbackBalance = await fallbackConnection.getBalance(publicKey);
+            const solBalance = fallbackBalance / LAMPORTS_PER_SOL;
+            console.log('SOL balance from fallback endpoint:', solBalance);
+            setBalance(solBalance);
+            return; // Exit if successful
+          } catch (fallbackError) {
+            console.error('Fallback endpoint error:', fallbackError);
+            // Continue to next fallback
+          }
+          
+          // Last resort: try RPC proxy
+          const proxyConnection = new Connection('https://solana-mainnet.g.alchemy.com/v2/demo', 'confirmed');
+          const proxyBalance = await proxyConnection.getBalance(publicKey);
+          const solBalance = proxyBalance / LAMPORTS_PER_SOL;
+          console.log('SOL balance from proxy endpoint:', solBalance);
           setBalance(solBalance);
-          */
         } catch (error) {
-          console.error('Error fetching balance:', error);
-          // Set a demo balance for testing
-          setBalance(42.69);
+          console.error('All balance fetch attempts failed:', error);
+          setBalance(0); // Set to 0 if all attempts fail
         }
       } else {
         setBalance(0);
@@ -56,7 +74,7 @@ function ProfilePage() {
     
     fetchBalance();
     
-    // Set up an interval to refresh balance periodically
+    // Set up an interval to refresh balance every 30 seconds
     const refreshInterval = setInterval(fetchBalance, 30000);
     
     // Clean up interval on component unmount
