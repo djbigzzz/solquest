@@ -13,6 +13,7 @@ function ProfilePage() {
   const [userPoints, setUserPoints] = useState(0);
   const [completedQuestCount, setCompletedQuestCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [userProgress, setUserProgress] = useState(null);
   
   // Check if wallet is connected
   useEffect(() => {
@@ -28,16 +29,29 @@ function ProfilePage() {
     const fetchBalance = async () => {
       if (connected && publicKey) {
         try {
-          const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+          console.log('Fetching SOL balance for wallet:', publicKey.toString());
+          // Use mainnet-beta instead of devnet to get the actual balance
+          const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
           const walletBalance = await connection.getBalance(publicKey);
-          setBalance(walletBalance / LAMPORTS_PER_SOL);
+          console.log('Raw wallet balance:', walletBalance);
+          const solBalance = walletBalance / LAMPORTS_PER_SOL;
+          console.log('SOL balance:', solBalance);
+          setBalance(solBalance);
         } catch (error) {
           console.error('Error fetching balance:', error);
+          // Set a default value in case of error
+          setBalance(0);
         }
       }
     };
     
     fetchBalance();
+    
+    // Set up an interval to refresh balance every 30 seconds
+    const refreshInterval = setInterval(fetchBalance, 30000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(refreshInterval);
   }, [connected, publicKey]);
   
   // Fetch user data from API
@@ -97,9 +111,6 @@ function ProfilePage() {
     }
   ];
   
-  // State for user progress
-  const [userProgress, setUserProgress] = useState(null);
-  
   // Fetch user progress from API
   useEffect(() => {
     const fetchUserProgress = async () => {
@@ -137,19 +148,17 @@ function ProfilePage() {
   const getCompletedQuests = () => {
     if (!userProgress) return [];
     
-    const completedQuests = [];
+    const completed = [];
     
-    // Check Twitter quest completion
     if (userProgress.twitterQuestCompleted) {
-      completedQuests.push(allQuests[0]);
+      completed.push(allQuests.find(q => q.id === 'twitter-follow'));
     }
     
-    // Check NFT quest completion
     if (userProgress.nftQuestCompleted) {
-      completedQuests.push(allQuests[1]);
+      completed.push(allQuests.find(q => q.id === 'nft-mint'));
     }
     
-    return completedQuests;
+    return completed;
   };
   
   // Get user badges based on completed quests
@@ -158,14 +167,20 @@ function ProfilePage() {
     
     const badges = [];
     
-    // Check Twitter quest completion for Twitter badge
     if (userProgress.twitterQuestCompleted) {
-      badges.push({ id: 'badge-1', name: 'SolQuest Follower', icon: '🐦' });
+      badges.push({
+        id: 'twitter-badge',
+        name: 'Twitter Follower',
+        icon: '🐦'
+      });
     }
     
-    // Check NFT quest completion for NFT badge
     if (userProgress.nftQuestCompleted) {
-      badges.push({ id: 'badge-2', name: 'OG NFT Holder', icon: '🎭' });
+      badges.push({
+        id: 'nft-badge',
+        name: 'NFT Collector',
+        icon: '🎭'
+      });
     }
     
     return badges;
@@ -179,9 +194,8 @@ function ProfilePage() {
     <div className="container mx-auto px-4 py-8">
       {!walletConnected ? (
         <div className="bg-yellow-900/30 border border-yellow-800 rounded-lg p-8 mb-8 text-center">
-          <h2 className="text-2xl font-bold text-yellow-200 mb-4">Connect Your Wallet</h2>
-          <p className="text-yellow-200/70 text-lg mb-6">Please connect your Solana wallet to view your profile</p>
-          <p className="text-yellow-200/50">Your profile will show your completed quests, points earned, and badges</p>
+          <h2 className="text-xl font-semibold text-yellow-500 mb-2">Wallet Not Connected</h2>
+          <p className="text-white mb-4">Please connect your wallet to view your profile and progress.</p>
         </div>
       ) : loading ? (
         <div className="flex justify-center items-center py-20">
@@ -217,13 +231,15 @@ function ProfilePage() {
                   </div>
                   <div className="bg-gray-700 rounded-lg p-4 shadow-inner">
                     <p className="text-white/70 text-sm mb-1">SOL Balance</p>
-                    <p className="text-2xl font-semibold text-yellow-400">{balance.toFixed(4)} <span className="text-white/50 text-sm">SOL</span></p>
+                    <p className="text-2xl font-semibold text-yellow-400">
+                      {typeof balance === 'number' ? balance.toFixed(4) : '0.0000'} <span className="text-white/50 text-sm">SOL</span>
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-      
+          
           {/* Badges */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-white mb-4">Badges Earned</h2>
