@@ -2,6 +2,7 @@ import React from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import useAuth from '../hooks/useAuth';
 import TwitterFollowQuest from '../components/TwitterFollowQuest';
+import NFTMintQuest from '../components/NFTMintQuest';
 
 function QuestsPage() {
   const { connected } = useWallet();
@@ -22,8 +23,9 @@ function QuestsPage() {
       
       <div className="mb-10">
         <h2 className="text-2xl font-semibold text-white mb-4">Available Quests</h2>
-        <div className="flex justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TwitterFollowQuest />
+          <NFTMintQuest />
         </div>
       </div>
     </div>

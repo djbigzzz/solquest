@@ -109,7 +109,7 @@ const NFTMintQuest = () => {
   };
 
   return (
-    <div className="bg-gray-800 rounded-xl overflow-hidden shadow-lg max-w-md mx-auto">
+    <div className="bg-gray-800 rounded-xl overflow-hidden shadow-lg">
       <div className="relative h-40 bg-gradient-to-r from-purple-600 to-pink-600">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-3xl font-bold text-white">SolQuest OG NFT</div>
@@ -122,51 +122,34 @@ const NFTMintQuest = () => {
           Mint the exclusive SolQuest OG NFT. Only 10,000 will ever be minted, making this a rare collectible in the Solana ecosystem.
         </p>
         
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <span className="text-sm text-white/60 flex items-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              400 XP
-            </span>
-            <span className="text-sm text-white/60 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              NFT Reward
-            </span>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium text-purple-400">Reward: 400 XP + NFT</span>
+          <span className="text-sm font-medium text-pink-400">{mintProgress}% Complete</span>
+        </div>
+        
+        <div className="flex items-center mb-2">
+          <span className="text-sm text-white/60 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            400 XP
+          </span>
+        </div>
+        
+        <div className="w-full mb-4">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-white font-medium text-sm">Progress:</span>
+            <span className="text-white text-sm">{mintProgress}%</span>
           </div>
-          
-          <div className="flex items-center">
-            <div className="relative w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-              <div className="text-xs font-semibold">{completed ? '100%' : `${mintProgress}%`}</div>
-              <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full">
-                <path
-                  d="M18 2.0845
-                    a 15.9155 15.9155 0 0 1 0 31.831
-                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="#5d5fef"
-                  strokeWidth="3"
-                  strokeDasharray={`${completed ? 100 : mintProgress}, 100`}
-                  className="stroke-current text-solana-purple"
-                />
-              </svg>
-            </div>
+          <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden mb-2">
+            <div 
+              className="h-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-300 ease-out"
+              style={{ width: `${mintProgress}%` }}
+            ></div>
           </div>
         </div>
         
         <div className="flex flex-col space-y-3">
-          {mintProgress > 0 && (
-            <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden mb-2">
-              <div 
-                className="h-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-300 ease-out"
-                style={{ width: `${mintProgress}%` }}
-              ></div>
-            </div>
-          )}
-          
           <button 
             className={`w-full ${questStarted ? 'bg-purple-700' : 'bg-gradient-to-r from-purple-600 to-pink-600'} text-white py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center`}
             onClick={handleStartQuest}
@@ -223,7 +206,7 @@ const NFTMintQuest = () => {
         {showSuccessModal && (
           <SuccessModal 
             title="NFT Mint Completed!"
-            message={`Congratulations! You've successfully minted the SolQuest OG NFT and earned ${pointsEarned} points!`}
+            message={`Congratulations! You've successfully minted the SolQuest OG NFT and earned ${pointsEarned} XP!`}
             onClose={() => setShowSuccessModal(false)}
           />
         )}

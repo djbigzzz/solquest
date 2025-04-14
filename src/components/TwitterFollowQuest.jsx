@@ -14,6 +14,7 @@ const TwitterFollowQuest = () => {
   const [questStarted, setQuestStarted] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [pointsEarned, setPointsEarned] = useState(0);
+  const [progressPercentage, setProgressPercentage] = useState(0);
   
   // Check if wallet is connected
   useEffect(() => {
@@ -27,6 +28,15 @@ const TwitterFollowQuest = () => {
             const progress = await progressAPI.getUserProgress();
             setQuestStarted(progress.twitterQuestStarted || false);
             setCompleted(progress.twitterQuestCompleted || false);
+            
+            // Set progress percentage
+            if (progress.twitterQuestCompleted) {
+              setProgressPercentage(100);
+            } else if (progress.twitterQuestStarted) {
+              setProgressPercentage(50);
+            } else {
+              setProgressPercentage(0);
+            }
           } catch (error) {
             console.error('Error fetching Twitter quest progress:', error);
           }
@@ -49,6 +59,7 @@ const TwitterFollowQuest = () => {
     // Open Twitter in a new tab
     window.open('https://twitter.com/solquest', '_blank');
     setQuestStarted(true);
+    setProgressPercentage(50);
     
     // Save progress to API if authenticated
     if (isAuthenticated) {
@@ -81,6 +92,7 @@ const TwitterFollowQuest = () => {
       // Simulate quest completion
       setCompleted(true);
       setPointsEarned(100);
+      setProgressPercentage(100);
       setShowSuccessModal(true);
       
       // Save completed status to API if authenticated
@@ -100,7 +112,7 @@ const TwitterFollowQuest = () => {
   };  
 
   return (
-    <div className="bg-gray-800 rounded-xl overflow-hidden shadow-lg max-w-md mx-auto">
+    <div className="bg-gray-800 rounded-xl overflow-hidden shadow-lg">
       <div className="relative h-40 bg-gradient-to-r from-blue-400 to-blue-600">
         <img 
           src={twitterLogo} 
@@ -114,39 +126,32 @@ const TwitterFollowQuest = () => {
         <p className="text-gray-300 mb-4">
           Follow SolQuest on Twitter to stay updated with the latest news and announcements about our platform and ecosystem.
         </p>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium text-purple-400">Reward: 100 XP</span>
+          <span className="text-sm font-medium text-blue-400">{progressPercentage}% Complete</span>
+        </div>
         
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <span className="text-sm text-white/60 flex items-center mr-3">
+            <span className="text-sm text-white/60 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               100 XP
             </span>
-            <span className="text-sm text-white/60 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              0.01 SOL
-            </span>
           </div>
-          
-          <div className="flex items-center">
-            <div className="relative w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-              <div className="text-xs font-semibold">{completed ? '100%' : '0%'}</div>
-              <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full">
-                <path
-                  d="M18 2.0845
-                    a 15.9155 15.9155 0 0 1 0 31.831
-                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="#5d5fef"
-                  strokeWidth="3"
-                  strokeDasharray={`${completed ? 100 : 0}, 100`}
-                  className="stroke-current text-solana-purple"
-                />
-              </svg>
-            </div>
+        </div>
+        
+        <div className="w-full mb-4">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-white font-medium text-sm">Progress:</span>
+            <span className="text-white text-sm">{progressPercentage}%</span>
+          </div>
+          <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300 ease-out"
+              style={{ width: `${progressPercentage}%` }}
+            ></div>
           </div>
         </div>
         
@@ -207,7 +212,7 @@ const TwitterFollowQuest = () => {
         {showSuccessModal && (
           <SuccessModal 
             title="Twitter Follow Completed!"
-            message={`Congratulations! You've successfully followed SolQuest on Twitter and earned ${pointsEarned} points!`}
+            message={`Congratulations! You've successfully followed SolQuest on Twitter and earned ${pointsEarned} XP!`}
             onClose={() => setShowSuccessModal(false)}
           />
         )}
