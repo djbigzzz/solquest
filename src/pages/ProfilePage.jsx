@@ -47,18 +47,6 @@ function ProfilePage() {
         try {
           setLoading(true);
           
-          // Get user progress from API
-          const userProgress = await progressAPI.getUserProgress();
-          
-          // Count completed quests
-          let completedCount = 0;
-          if (userProgress.twitterQuestCompleted) completedCount++;
-          if (userProgress.nftQuestCompleted) completedCount++;
-          
-          // Set state with the loaded data
-          setUserPoints(userProgress.totalPoints || 0);
-          setCompletedQuestCount(completedCount);
-          
           // Short timeout to prevent flickering
           setTimeout(() => {
             setLoading(false);
@@ -117,8 +105,19 @@ function ProfilePage() {
     const fetchUserProgress = async () => {
       if (walletConnected && isAuthenticated) {
         try {
+          console.log('Fetching user progress...');
           const progress = await progressAPI.getUserProgress();
+          console.log('User progress data:', progress);
           setUserProgress(progress);
+          
+          // Update points and completed quests count
+          setUserPoints(progress.totalPoints || 0);
+          
+          // Count completed quests
+          let completedCount = 0;
+          if (progress.twitterQuestCompleted) completedCount++;
+          if (progress.nftQuestCompleted) completedCount++;
+          setCompletedQuestCount(completedCount);
         } catch (error) {
           console.error('Error fetching user progress:', error);
         }
@@ -126,6 +125,12 @@ function ProfilePage() {
     };
     
     fetchUserProgress();
+    
+    // Set up an interval to refresh progress data every 10 seconds
+    const refreshInterval = setInterval(fetchUserProgress, 10000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(refreshInterval);
   }, [walletConnected, isAuthenticated]);
   
   // Get completed quests based on API data
