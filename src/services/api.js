@@ -231,11 +231,45 @@ export const referralAPI = {
   }
 };
 
+// Progress API
+export const progressAPI = {
+  getUserProgress: async () => {
+    try {
+      const response = await apiClient.get('/api/progress');
+      return response.data;
+    } catch (error) {
+      console.error('Get user progress error:', error);
+      throw error;
+    }
+  },
+  
+  updateTwitterQuest: async (progressData) => {
+    try {
+      const response = await apiClient.post('/api/progress/twitter', progressData);
+      return response.data;
+    } catch (error) {
+      console.error('Update Twitter quest progress error:', error);
+      throw error;
+    }
+  },
+  
+  updateNFTQuest: async (progressData) => {
+    try {
+      const response = await apiClient.post('/api/progress/nft', progressData);
+      return response.data;
+    } catch (error) {
+      console.error('Update NFT quest progress error:', error);
+      throw error;
+    }
+  }
+};
+
 // Export all APIs
 export default {
   auth: authAPI,
   quests: questsAPI,
   user: userAPI,
   leaderboard: leaderboardAPI,
-  referral: referralAPI
+  referral: referralAPI,
+  progress: progressAPI
 };
