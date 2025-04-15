@@ -1,6 +1,6 @@
 import React from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import TwitterFollowQuest from '../components/TwitterFollowQuest';
+import XFollowQuest from '../components/TwitterFollowQuest'; // File name is still TwitterFollowQuest.jsx but component is renamed
 import NFTMintQuest from '../components/NFTMintQuest';
 import useAuth from '../hooks/useAuth';
 
@@ -22,7 +22,7 @@ function QuestsPage() {
       {/* Main Quest Section */}
       <div className="max-w-xs mx-auto space-y-6">
         <div className="w-full border-2 border-blue-500/30 rounded-lg overflow-hidden">
-          <TwitterFollowQuest />
+          <XFollowQuest />
         </div>
         <div className="w-full border-2 border-pink-500/30 rounded-lg overflow-hidden">
           <NFTMintQuest />
