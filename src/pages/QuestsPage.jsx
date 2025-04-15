@@ -18,6 +18,7 @@ function QuestsPage() {
   const [rewardsClaimed, setRewardsClaimed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [syncStatus, setSyncStatus] = useState('synced'); // 'synced', 'local-only', 'syncing'
   
   // Fetch user's quest progress on mount and when wallet/auth changes
   useEffect(() => {
@@ -39,35 +40,196 @@ function QuestsPage() {
         setNftStarted(progress.nftQuestStarted || false);
         setNftCompleted(progress.nftQuestCompleted || false);
         setRewardsClaimed(progress.rewardsClaimed || false);
+        
+        // Data is synced with the server
+        setSyncStatus('synced');
+        
+        // Update local storage with server data
+        localStorage.setItem('solquest_progress', JSON.stringify({
+          twitterQuestStarted: progress.twitterQuestStarted || false,
+          twitterQuestCompleted: progress.twitterQuestCompleted || false,
+          nftQuestStarted: progress.nftQuestStarted || false,
+          nftQuestCompleted: progress.nftQuestCompleted || false,
+          rewardsClaimed: progress.rewardsClaimed || false,
+          lastSynced: new Date().toISOString()
+        }));
       }
+      // Clear any existing errors
+      setError(null);
     } catch (err) {
       console.error('Error fetching user progress:', err);
+      
+      // For development/testing: Use local storage as fallback
+      // This allows the app to work even when the API is unavailable
+      const localProgress = localStorage.getItem('solquest_progress');
+      if (localProgress) {
+        try {
+          const parsedProgress = JSON.parse(localProgress);
+          setSocialStarted(parsedProgress.twitterQuestStarted || false);
+          setSocialCompleted(parsedProgress.twitterQuestCompleted || false);
+          setNftStarted(parsedProgress.nftQuestStarted || false);
+          setNftCompleted(parsedProgress.nftQuestCompleted || false);
+          setRewardsClaimed(parsedProgress.rewardsClaimed || false);
+          
+          // Data is only available locally
+          setSyncStatus('local-only');
+          
+          // Don't show error if we could load from local storage
+          return;
+        } catch (localErr) {
+          console.error('Error parsing local progress:', localErr);
+        }
+      }
+      
+      // Only show error if we couldn't recover from local storage
       setError('Failed to load your quest progress. Please try again.');
     } finally {
       setLoading(false);
     }
   };
   
+  // Helper to save progress to local storage
+  const saveProgressToLocalStorage = (syncState = 'local-only') => {
+    const progress = {
+      twitterQuestStarted: socialStarted,
+      twitterQuestCompleted: socialCompleted,
+      nftQuestStarted: nftStarted,
+      nftQuestCompleted: nftCompleted,
+      rewardsClaimed: rewardsClaimed,
+      lastSynced: syncState === 'synced' ? new Date().toISOString() : null
+    };
+    localStorage.setItem('solquest_progress', JSON.stringify(progress));
+    
+    // Update sync status
+    setSyncStatus(syncState);
+  };
+  
   // Quest handlers
-  const handleStartSocial = () => {
+  const handleStartSocial = async () => {
     window.open('https://x.com/SolQuestio', '_blank');
     setSocialStarted(true);
+    
+    // Try to update backend
+    try {
+      if (connected && publicKey) {
+        await progressAPI.updateTwitterQuest({
+          walletAddress: publicKey.toString(),
+          started: true,
+          completed: false
+        });
+        // Successfully synced with server
+        saveProgressToLocalStorage('synced');
+      }
+    } catch (err) {
+      console.error('Error updating Twitter quest progress:', err);
+      // Only saved locally
+      saveProgressToLocalStorage('local-only');
+    }
   };
   
-  const handleVerifySocial = () => {
+  const handleVerifySocial = async () => {
     setSocialCompleted(true);
-    // In a real implementation, call API to verify
+    
+    // Try to update backend
+    try {
+      if (connected && publicKey) {
+        await progressAPI.updateTwitterQuest({
+          walletAddress: publicKey.toString(),
+          started: true,
+          completed: true
+        });
+        // Successfully synced with server
+        saveProgressToLocalStorage('synced');
+      }
+    } catch (err) {
+      console.error('Error updating Twitter quest completion:', err);
+      // Only saved locally
+      saveProgressToLocalStorage('local-only');
+    }
   };
   
-  const handleStartNFT = () => {
-    // Open NFT mint page
+  const handleStartNFT = async () => {
     window.open('https://solquest.io/mint', '_blank');
     setNftStarted(true);
+    
+    // Try to update backend
+    try {
+      if (connected && publicKey) {
+        await progressAPI.updateNFTQuest({
+          walletAddress: publicKey.toString(),
+          started: true,
+          completed: false
+        });
+        // Successfully synced with server
+        saveProgressToLocalStorage('synced');
+      }
+    } catch (err) {
+      console.error('Error updating NFT quest progress:', err);
+      // Only saved locally
+      saveProgressToLocalStorage('local-only');
+    }
   };
   
-  const handleVerifyNFT = () => {
+  const handleVerifyNFT = async () => {
     setNftCompleted(true);
-    // In a real implementation, call API to verify
+    
+    // Try to update backend
+    try {
+      if (connected && publicKey) {
+        await progressAPI.updateNFTQuest({
+          walletAddress: publicKey.toString(),
+          started: true,
+          completed: true
+        });
+        // Successfully synced with server
+        saveProgressToLocalStorage('synced');
+      }
+    } catch (err) {
+      console.error('Error updating NFT quest completion:', err);
+      // Only saved locally
+      saveProgressToLocalStorage('local-only');
+    }
+  };
+  
+  // Function to retry syncing with the server
+  const handleRetrySync = async () => {
+    setSyncStatus('syncing');
+    try {
+      // Try to sync Twitter quest progress
+      if (socialStarted || socialCompleted) {
+        await progressAPI.updateTwitterQuest({
+          walletAddress: publicKey.toString(),
+          started: socialStarted,
+          completed: socialCompleted
+        });
+      }
+      
+      // Try to sync NFT quest progress
+      if (nftStarted || nftCompleted) {
+        await progressAPI.updateNFTQuest({
+          walletAddress: publicKey.toString(),
+          started: nftStarted,
+          completed: nftCompleted
+        });
+      }
+      
+      // Try to sync rewards claimed status
+      if (rewardsClaimed) {
+        await progressAPI.claimQuestRewards({
+          walletAddress: publicKey.toString(),
+          questId: 'solquest-onboarding',
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // Successfully synced with server
+      saveProgressToLocalStorage('synced');
+      setError(null);
+    } catch (err) {
+      console.error('Error syncing with server:', err);
+      setSyncStatus('local-only');
+      setError('Failed to sync with server. Your progress is only saved locally.');
+    }
   };
 
   return (
@@ -100,6 +262,39 @@ function QuestsPage() {
             className="mt-2 text-red-300 text-sm hover:text-red-100 transition-colors"
           >
             Dismiss
+          </button>
+        </div>
+      )}
+      
+      {syncStatus === 'local-only' && !error && (
+        <div className="bg-amber-900/30 border border-amber-800 rounded-lg p-4 mb-6 text-center max-w-md mx-auto">
+          <div className="flex items-center justify-center mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span className="text-amber-300 font-medium">Your progress is only saved locally</span>
+          </div>
+          <p className="text-amber-200/80 text-sm mb-3">Your quest progress has not been synchronized with our servers. Points and rewards may not be credited to your account until synced.</p>
+          <button 
+            onClick={handleRetrySync}
+            className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center mx-auto"
+          >
+            {syncStatus === 'syncing' ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Syncing...
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Retry Sync
+              </>
+            )}
           </button>
         </div>
       )}
@@ -262,6 +457,16 @@ function QuestsPage() {
                       
                       if (result && result.success) {
                         setRewardsClaimed(true);
+                        
+                        // Update local storage with claimed status
+                        const progress = {
+                          twitterQuestStarted: socialStarted,
+                          twitterQuestCompleted: socialCompleted,
+                          nftQuestStarted: nftStarted,
+                          nftQuestCompleted: nftCompleted,
+                          rewardsClaimed: true
+                        };
+                        localStorage.setItem('solquest_progress', JSON.stringify(progress));
                         
                         // Show confetti celebration
                         const confettiCanvas = document.createElement('canvas');
