@@ -16,24 +16,19 @@ function AdminMonitor() {
   const [status, setStatus] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [auth, setAuth] = useState(() => sessionStorage.getItem('solquest_admin_auth') === 'true');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
   const [apiError, setApiError] = useState(null);
   const navigate = useNavigate();
 
   // Log errors to console
   useEffect(() => {
-    if (error || loginError || apiError) {
+    if (error || apiError) {
       console.error('Admin Monitor Error:', {
         error,
-        loginError,
         apiError,
         timestamp: new Date().toISOString()
       });
     }
-  }, [error, loginError, apiError]);
+  }, [error, apiError]);
 
   // Show loading state while fetching data
   const showLoading = loading || !status.health;
@@ -46,12 +41,10 @@ function AdminMonitor() {
   };
 
   useEffect(() => {
-    if (!auth) return;
     fetchStatus();
     const interval = setInterval(fetchStatus, REFRESH_INTERVAL);
     return () => clearInterval(interval);
-    // eslint-disable-next-line
-  }, [auth]);
+  }, []);
 
   const fetchStatus = async () => {
     setLoading(true);
@@ -84,44 +77,6 @@ function AdminMonitor() {
     }
     setLoading(false);
   };
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setLoginError('');
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
-      setAuth(true);
-      sessionStorage.setItem('solquest_admin_auth', 'true');
-    } else {
-      setLoginError('Invalid username or password.');
-    }
-  };
-
-  if (!auth) {
-    return (
-      <div style={{ background: BRAND_BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <form onSubmit={handleLogin} style={{ background: BRAND_CARD, padding: 40, borderRadius: 16, boxShadow: '0 2px 16px #0008', width: 340 }}>
-          <h2 style={{ color: BRAND_ACCENT, marginBottom: 28, textAlign: 'center', fontFamily: 'Montserrat, Arial, sans-serif' }}>SolQuest Admin Login</h2>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            style={{ width: '100%', padding: 12, marginBottom: 16, borderRadius: 8, border: '1px solid #333', background: '#191a2f', color: BRAND_TEXT, fontSize: 16 }}
-            autoFocus
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            style={{ width: '100%', padding: 12, marginBottom: 18, borderRadius: 8, border: '1px solid #333', background: '#191a2f', color: BRAND_TEXT, fontSize: 16 }}
-          />
-          {loginError && <div style={{ color: '#ff6b6b', marginBottom: 10 }}>{loginError}</div>}
-          <button type="submit" style={{ width: '100%', padding: 12, borderRadius: 8, border: 'none', background: BRAND_ACCENT, color: '#fff', fontWeight: 700, fontSize: 16, cursor: 'pointer', marginBottom: 8 }}>Login</button>
-        </form>
-      </div>
-    );
-  }
 
   return (
     <div style={{ background: BRAND_BG, minHeight: '100vh', padding: 32, maxWidth: 1000, margin: '0 auto', color: BRAND_TEXT, fontFamily: 'Montserrat, Arial, sans-serif' }}>
