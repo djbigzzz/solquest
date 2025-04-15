@@ -63,12 +63,48 @@ const connectToDatabase = async () => {
 })();
 
 // Middleware
-app.use(helmet()); // Security headers
+// Configure Helmet with relaxed settings for development
+app.use(helmet({
+  contentSecurityPolicy: process.env.NODE_ENV === 'production',
+  crossOriginEmbedderPolicy: process.env.NODE_ENV === 'production',
+})); 
+
+// CORS configuration
+const allowedOrigins = [
+  'https://solquest.io',
+  'https://www.solquest.io',
+  'https://solquest-app-new.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173', // Vite default port
+];
+
+// Add any environment-specific frontend URLs
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 const corsOptions = {
-  origin: [process.env.FRONTEND_URL, 'https://solquest.io', 'http://localhost:3000'],
-  optionsSuccessStatus: 200,
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+    
+    // In development, allow all origins
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // In production, check against allowed origins
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked request from origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
 };
+
 app.use(cors(corsOptions));
 app.use(express.json()); // Parse JSON bodies
 app.use(morgan('dev')); // HTTP request logger

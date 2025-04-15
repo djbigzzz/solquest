@@ -23,13 +23,40 @@ function QuestsPage() {
   // Check API health status
   const checkApiHealth = async () => {
     try {
-      // Try to fetch the health status from the API
-      const response = await fetch('/api/health');
-      if (response.ok) {
-        const data = await response.json();
-        console.log('API health status:', data);
-        return true;
+      console.log('Checking API health status...');
+      // Try multiple endpoints to find one that works
+      const endpoints = [
+        '/api/health',
+        'https://solquest.io/api/health',
+        'https://solquest-app-new.vercel.app/api/health',
+        '/api/db-connect',
+        'https://solquest.io/api/db-connect',
+        'https://solquest-app-new.vercel.app/api/db-connect'
+      ];
+      
+      // Try each endpoint until one works
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Trying endpoint: ${endpoint}`);
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-cache'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`API health check successful for ${endpoint}:`, data);
+            return true;
+          } else {
+            console.warn(`API health check failed for ${endpoint} with status: ${response.status}`);
+          }
+        } catch (endpointErr) {
+          console.warn(`Error checking endpoint ${endpoint}:`, endpointErr.message);
+        }
       }
+      
+      console.error('All API health endpoints failed');
       return false;
     } catch (err) {
       console.error('API health check failed:', err);
@@ -320,6 +347,7 @@ function QuestsPage() {
           <p className="text-amber-200/80 text-sm mb-3">Your quest progress has not been synchronized with our servers. Points and rewards may not be credited to your account until synced.</p>
           <button 
             onClick={handleRetrySync}
+            disabled={syncStatus === 'syncing'}
             className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center mx-auto"
           >
             {syncStatus === 'syncing' ? (
