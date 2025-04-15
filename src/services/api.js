@@ -24,8 +24,31 @@ const FALLBACK_API_URL = IS_DEV
 // Function to check if the primary API is accessible
 const checkApiConnection = async (url) => {
   try {
-    const response = await fetch(`${url}/api/health`, { method: 'HEAD' });
-    return response.ok;
+    console.log(`Checking API connection to ${url}/api/health`);
+    const response = await fetch(`${url}/api/health`, { 
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      // Add a cache-busting parameter to avoid cached responses
+      cache: 'no-cache'
+    });
+    
+    if (response.ok) {
+      // Parse the response to check database connection status
+      const data = await response.json();
+      console.log('API health check response:', data);
+      
+      // Only consider the API accessible if the database is connected
+      if (data.database && data.database.status === 'connected') {
+        console.log('Database connection verified');
+        return true;
+      } else {
+        console.warn('API is accessible but database is not connected');
+        return false;
+      }
+    }
+    
+    console.warn(`API health check failed with status: ${response.status}`);
+    return false;
   } catch (error) {
     console.warn(`API connection check failed for ${url}:`, error.message);
     return false;
@@ -34,17 +57,56 @@ const checkApiConnection = async (url) => {
 
 // Determine which API URL to use (will be set after initialization)
 let API_URL = PRIMARY_API_URL;
+let isApiInitialized = false;
+let initializationPromise = null;
 
-// Initialize API connection check
-(async () => {
-  const isPrimaryAccessible = await checkApiConnection(PRIMARY_API_URL);
-  if (!isPrimaryAccessible) {
-    console.log(`Primary API at ${PRIMARY_API_URL} is not accessible, using fallback URL: ${FALLBACK_API_URL}`);
-    API_URL = FALLBACK_API_URL;
-  } else {
-    console.log(`Using primary API at ${PRIMARY_API_URL}`);
+// Function to initialize API connection
+const initializeApiConnection = async () => {
+  if (isApiInitialized) {
+    return API_URL;
   }
-})();
+  
+  if (initializationPromise) {
+    return initializationPromise;
+  }
+  
+  console.log('Initializing API connection...');
+  initializationPromise = (async () => {
+    // First try the primary URL
+    console.log(`Trying primary API at ${PRIMARY_API_URL}`);
+    const isPrimaryAccessible = await checkApiConnection(PRIMARY_API_URL);
+    
+    if (isPrimaryAccessible) {
+      console.log(`✅ Successfully connected to primary API at ${PRIMARY_API_URL}`);
+      API_URL = PRIMARY_API_URL;
+    } else {
+      // If primary fails, try the fallback URL
+      console.log(`Primary API failed, trying fallback URL: ${FALLBACK_API_URL}`);
+      const isFallbackAccessible = await checkApiConnection(FALLBACK_API_URL);
+      
+      if (isFallbackAccessible) {
+        console.log(`✅ Successfully connected to fallback API at ${FALLBACK_API_URL}`);
+        API_URL = FALLBACK_API_URL;
+      } else {
+        console.error('❌ All API endpoints are inaccessible. Using primary URL as default.');
+        API_URL = PRIMARY_API_URL;
+      }
+    }
+    
+    isApiInitialized = true;
+    initializationPromise = null;
+    return API_URL;
+  })();
+  
+  return initializationPromise;
+};
+
+// Initialize API connection immediately
+initializeApiConnection().then(url => {
+  console.log(`API initialized with URL: ${url}`);
+}).catch(err => {
+  console.error('API initialization error:', err);
+});
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -57,15 +119,25 @@ const apiClient = axios.create({
 
 // Request interceptor for adding auth token and updating baseURL
 apiClient.interceptors.request.use(
-  (config) => {
-    // Update the baseURL before each request to ensure we're using the correct one
-    config.baseURL = API_URL;
-    
-    const token = localStorage.getItem('solquest_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    // Wait for API initialization to complete before proceeding
+    try {
+      // This ensures we have the correct API_URL before making the request
+      await initializeApiConnection();
+      
+      // Update the baseURL before each request to ensure we're using the correct one
+      config.baseURL = API_URL;
+      console.log(`Making request to: ${config.baseURL}${config.url}`);
+      
+      const token = localStorage.getItem('solquest_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    } catch (error) {
+      console.error('Error in request interceptor:', error);
+      return Promise.reject(error);
     }
-    return config;
   },
   (error) => Promise.reject(error)
 );

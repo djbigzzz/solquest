@@ -72,7 +72,9 @@ function QuestsPage() {
   const fetchUserProgress = async () => {
     try {
       setLoading(true);
+      console.log('Fetching user progress from API...');
       const progress = await progressAPI.getUserProgress();
+      console.log('User progress received:', progress);
       
       // Update local state based on API response
       if (progress) {
@@ -82,48 +84,48 @@ function QuestsPage() {
         setNftCompleted(progress.nftQuestCompleted || false);
         setRewardsClaimed(progress.rewardsClaimed || false);
         
-        // Data is synced with the server
-        setSyncStatus('synced');
-        
-        // Update local storage with server data
-        localStorage.setItem('solquest_progress', JSON.stringify({
+        // Save to local storage as backup
+        const progressToSave = {
           twitterQuestStarted: progress.twitterQuestStarted || false,
           twitterQuestCompleted: progress.twitterQuestCompleted || false,
           nftQuestStarted: progress.nftQuestStarted || false,
           nftQuestCompleted: progress.nftQuestCompleted || false,
           rewardsClaimed: progress.rewardsClaimed || false,
           lastSynced: new Date().toISOString()
-        }));
+        };
+        localStorage.setItem('solquest_progress', JSON.stringify(progressToSave));
+        
+        setSyncStatus('synced');
+        setError(null);
+        console.log('Progress successfully synced with server');
       }
-      // Clear any existing errors
-      setError(null);
     } catch (err) {
       console.error('Error fetching user progress:', err);
       
-      // For development/testing: Use local storage as fallback
-      // This allows the app to work even when the API is unavailable
+      // Check if it's a network error or API-specific error
+      if (err.message && err.message.includes('Network Error')) {
+        setError('Failed to sync with server. Your progress is only saved locally.');
+      } else {
+        setError('Failed to load your quest progress. Please try again.');
+      }
+      
+      // Try to load from local storage as fallback
       const localProgress = localStorage.getItem('solquest_progress');
       if (localProgress) {
         try {
+          console.log('Loading progress from local storage');
           const parsedProgress = JSON.parse(localProgress);
           setSocialStarted(parsedProgress.twitterQuestStarted || false);
           setSocialCompleted(parsedProgress.twitterQuestCompleted || false);
           setNftStarted(parsedProgress.nftQuestStarted || false);
           setNftCompleted(parsedProgress.nftQuestCompleted || false);
           setRewardsClaimed(parsedProgress.rewardsClaimed || false);
-          
-          // Data is only available locally
           setSyncStatus('local-only');
-          
-          // Don't show error if we could load from local storage
-          return;
+          console.log('Loaded progress from local storage');
         } catch (localErr) {
           console.error('Error parsing local progress:', localErr);
         }
       }
-      
-      // Only show error if we couldn't recover from local storage
-      setError('Failed to load your quest progress. Please try again.');
     } finally {
       setLoading(false);
     }
