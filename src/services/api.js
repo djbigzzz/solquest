@@ -261,6 +261,16 @@ export const progressAPI = {
       console.error('Update NFT quest progress error:', error);
       throw error;
     }
+  },
+  
+  claimQuestRewards: async (questData) => {
+    try {
+      const response = await apiClient.post('/api/progress/claim-rewards', questData);
+      return response.data;
+    } catch (error) {
+      console.error('Claim quest rewards error:', error);
+      throw error;
+    }
   }
 };
 

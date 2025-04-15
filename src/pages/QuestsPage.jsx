@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Link } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
+import { progressAPI, questsAPI } from '../services/api';
+import confetti from 'canvas-confetti';
 
 function QuestsPage() {
   const { connected, publicKey } = useWallet();
@@ -13,6 +15,38 @@ function QuestsPage() {
   const [socialCompleted, setSocialCompleted] = useState(false);
   const [nftStarted, setNftStarted] = useState(false);
   const [nftCompleted, setNftCompleted] = useState(false);
+  const [rewardsClaimed, setRewardsClaimed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // Fetch user's quest progress on mount and when wallet/auth changes
+  useEffect(() => {
+    if (connected && publicKey) {
+      fetchUserProgress();
+    }
+  }, [connected, publicKey, isAuthenticated]);
+  
+  // Fetch user progress from API
+  const fetchUserProgress = async () => {
+    try {
+      setLoading(true);
+      const progress = await progressAPI.getUserProgress();
+      
+      // Update local state based on API response
+      if (progress) {
+        setSocialStarted(progress.twitterQuestStarted || false);
+        setSocialCompleted(progress.twitterQuestCompleted || false);
+        setNftStarted(progress.nftQuestStarted || false);
+        setNftCompleted(progress.nftQuestCompleted || false);
+        setRewardsClaimed(progress.rewardsClaimed || false);
+      }
+    } catch (err) {
+      console.error('Error fetching user progress:', err);
+      setError('Failed to load your quest progress. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Quest handlers
   const handleStartSocial = () => {
@@ -58,7 +92,19 @@ function QuestsPage() {
         </div>
       </div>
       
-      {!connected || !isAuthenticated ? (
+      {error && (
+        <div className="bg-red-900/30 border border-red-800 rounded-lg p-4 mb-6 text-center max-w-md mx-auto">
+          <p className="text-red-200">{error}</p>
+          <button 
+            onClick={() => setError(null)}
+            className="mt-2 text-red-300 text-sm hover:text-red-100 transition-colors"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {!connected ? (
         <div className="bg-yellow-900/30 border border-yellow-800 rounded-lg p-5 mb-6 text-center max-w-md mx-auto">
           <p className="text-yellow-200">Please connect your wallet to access quests</p>
           <button 
@@ -74,12 +120,12 @@ function QuestsPage() {
           <div className="flex flex-col md:flex-row justify-between items-start mb-8">
             <div>
               <div className="flex items-center space-x-3 mb-2">
-                <span className="bg-gray-800 text-gray-400 text-xs px-2 py-1 rounded">Quest Overview</span>
+                <span className="bg-gray-800 text-gray-400 text-xs px-2 py-1 rounded">Quest Progress</span>
                 <div className="flex items-center">
-                  <span className="text-gray-400 text-xs">0%</span>
+                  <span className="text-gray-400 text-xs">{(socialCompleted && nftCompleted) ? '100' : (socialCompleted || nftCompleted) ? '50' : '0'}%</span>
                   <div className="w-20 h-1.5 bg-gray-800 rounded-full ml-2">
                     <div 
-                      className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full" 
+                      className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-300" 
                       style={{ width: `${(socialCompleted && nftCompleted) ? 100 : (socialCompleted || nftCompleted) ? 50 : 0}%` }}
                     ></div>
                   </div>
@@ -110,136 +156,173 @@ function QuestsPage() {
             </div>
           </div>
           
-          {/* Quest Steps */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            {/* Step 01 - X Follow */}
-            <div className={`bg-gradient-to-br ${socialCompleted ? 'from-green-900/30 to-green-800/30 border-green-700/30' : 'from-purple-900/30 to-blue-900/30 border-purple-700/30'} rounded-lg p-5 border relative`}>
-              <div className="absolute top-3 right-3">
-                {socialCompleted ? (
-                  <div className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-full">Completed</div>
-                ) : (
-                  <div className="bg-blue-500/20 text-blue-400 text-xs px-2 py-1 rounded-full">Active</div>
-                )}
+          {/* Single Quest Card with Two Subtasks */}
+          <div className="flex flex-col space-y-8 mb-8">
+            {/* Step 1: X Follow */}
+            <div className={`flex flex-col md:flex-row items-center md:items-start bg-gray-800/70 rounded-xl p-6 border-2 ${!socialCompleted ? 'border-purple-600' : 'border-gray-700'} shadow-lg relative transition-all duration-300`}>  
+              {/* Step Number & Status */}
+              <div className="flex flex-col items-center mr-6">
+                <div className={`w-14 h-14 flex items-center justify-center rounded-full text-3xl font-bold mb-2 border-4 ${socialCompleted ? 'bg-green-500/20 border-green-400 text-green-300' : 'bg-purple-900/40 border-purple-500 text-purple-200'} transition-all duration-300`}>01</div>
+                <span className={`text-xs font-semibold ${socialCompleted ? 'text-green-400' : socialStarted ? 'text-purple-400' : 'text-gray-400'}`}>{socialCompleted ? 'Completed' : socialStarted ? 'Active' : 'Active'}</span>
               </div>
-              <div className="text-3xl font-bold text-gray-600 mb-3">01</div>
-              <h3 className="text-lg font-semibold text-white mb-1">Follow on X</h3>
-              <p className="text-gray-400 text-sm mb-4">Follow SolQuest on X to stay updated with the latest announcements</p>
-              
-              <div className="space-y-2">
-                {!socialStarted ? (
-                  <button 
+              {/* Step Content */}
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-white mb-1">Follow SolQuest on X</h3>
+                <p className="text-gray-300 text-sm mb-4">Follow <span className="text-blue-400 font-semibold">@SolQuestio</span> on X (formerly Twitter) to unlock the next step.</p>
+                <div className="flex space-x-3">
+                  <button
                     onClick={handleStartSocial}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center"
+                    disabled={socialCompleted}
+                    className={`px-5 py-2 rounded-lg font-medium transition-all duration-200 ${socialCompleted ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:opacity-90'}`}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                    Start
+                    {socialCompleted ? 'Started' : 'Start'}
                   </button>
-                ) : !socialCompleted ? (
-                  <button 
+                  <button
                     onClick={handleVerifySocial}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                    disabled={!socialStarted || socialCompleted}
+                    className={`px-5 py-2 rounded-lg font-medium transition-all duration-200 ${socialCompleted ? 'bg-green-600 text-white cursor-not-allowed' : (!socialStarted ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-600 to-blue-600 text-white hover:opacity-90')}`}
                   >
-                    Verify
+                    {socialCompleted ? (
+                      <span className="flex items-center"><svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Completed</span>
+                    ) : 'Verify'}
                   </button>
-                ) : (
-                  <div className="flex items-center text-green-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>Completed</span>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
-            
-            {/* Step 02 - NFT Mint */}
-            <div className={`bg-gradient-to-br ${nftCompleted ? 'from-green-900/30 to-green-800/30 border-green-700/30' : 'from-purple-900/30 to-blue-900/30 border-purple-700/30'} rounded-lg p-5 border relative`}>
-              <div className="absolute top-3 right-3">
-                {nftCompleted ? (
-                  <div className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-full">Completed</div>
-                ) : socialCompleted ? (
-                  <div className="bg-blue-500/20 text-blue-400 text-xs px-2 py-1 rounded-full">Active</div>
-                ) : (
-                  <div className="bg-gray-700/20 text-gray-500 text-xs px-2 py-1 rounded-full">Locked</div>
-                )}
+
+            {/* Step 2: NFT Mint */}
+            <div className={`flex flex-col md:flex-row items-center md:items-start bg-gray-800/70 rounded-xl p-6 border-2 ${socialCompleted ? (!nftCompleted ? 'border-blue-500' : 'border-green-400') : 'border-gray-700'} shadow-lg relative transition-all duration-300`}>  
+              {/* Step Number & Status */}
+              <div className="flex flex-col items-center mr-6">
+                <div className={`w-14 h-14 flex items-center justify-center rounded-full text-3xl font-bold mb-2 border-4 ${nftCompleted ? 'bg-green-500/20 border-green-400 text-green-300' : socialCompleted ? 'bg-blue-900/40 border-blue-500 text-blue-200' : 'bg-gray-900/40 border-gray-600 text-gray-500'} transition-all duration-300`}>02</div>
+                <span className={`text-xs font-semibold ${nftCompleted ? 'text-green-400' : socialCompleted ? 'text-blue-400' : 'text-gray-500'}`}>{nftCompleted ? 'Completed' : socialCompleted ? 'Active' : 'Locked'}</span>
               </div>
-              <div className="text-3xl font-bold text-gray-600 mb-3">02</div>
-              <h3 className="text-lg font-semibold text-white mb-1">Mint OG NFT</h3>
-              <p className="text-gray-400 text-sm mb-4">Mint the exclusive SolQuest OG NFT to unlock special rewards</p>
-              
-              <div className="space-y-2">
-                {!nftStarted ? (
-                  <button 
+              {/* Step Content */}
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-white mb-1">Mint Your NFT</h3>
+                <p className="text-gray-300 text-sm mb-4">Mint your exclusive SolQuest NFT after following on X!</p>
+                <div className="flex space-x-3">
+                  <button
                     onClick={handleStartNFT}
-                    disabled={!socialCompleted}
-                    className={`w-full ${socialCompleted ? 'bg-gradient-to-r from-pink-600 to-purple-600' : 'bg-gray-700'} text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
+                    disabled={!socialCompleted || nftCompleted}
+                    className={`px-5 py-2 rounded-lg font-medium transition-all duration-200 ${!socialCompleted || nftCompleted ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90'}`}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Mint NFT
+                    {nftCompleted ? 'Started' : 'Start'}
                   </button>
-                ) : !nftCompleted ? (
-                  <button 
+                  <button
                     onClick={handleVerifyNFT}
-                    className="w-full bg-pink-600 text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                    disabled={!socialCompleted || !nftStarted || nftCompleted}
+                    className={`px-5 py-2 rounded-lg font-medium transition-all duration-200 ${nftCompleted ? 'bg-green-600 text-white cursor-not-allowed' : (!socialCompleted || !nftStarted ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-600 to-blue-600 text-white hover:opacity-90')}`}
                   >
-                    Verify
+                    {nftCompleted ? (
+                      <span className="flex items-center"><svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Completed</span>
+                    ) : 'Verify'}
                   </button>
-                ) : (
-                  <div className="flex items-center text-green-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </div>
+              </div>
+            </div>
+
+            {/* Step 03 - Claim Rewards */}
+            <div className={`bg-gray-900/30 rounded-lg p-5 border ${socialCompleted && nftCompleted ? 'border-yellow-600/50 bg-yellow-900/20' : 'border-gray-800/50'} relative ${socialCompleted && nftCompleted ? 'opacity-100' : 'opacity-70'}`}>
+              <div className="absolute top-3 right-3">
+                <div className={`${socialCompleted && nftCompleted ? 'bg-yellow-700/30 text-yellow-400' : 'bg-gray-700/20 text-gray-500'} text-xs px-2 py-1 rounded-full flex items-center`}>
+                  {socialCompleted && nftCompleted ? (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Unlocked
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Locked
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className={`text-3xl font-bold ${socialCompleted && nftCompleted ? 'text-yellow-500' : 'text-gray-700'} mb-3`}>03</div>
+              <h3 className={`text-lg font-semibold ${socialCompleted && nftCompleted ? 'text-yellow-400' : 'text-gray-500'} mb-1`}>Claim Rewards</h3>
+              <p className={`${socialCompleted && nftCompleted ? 'text-yellow-300/70' : 'text-gray-500'} text-sm mb-4`}>Claim your 150 points and exclusive rewards!</p>
+              
+              <button 
+                onClick={async () => {
+                  if (socialCompleted && nftCompleted && !rewardsClaimed) {
+                    try {
+                      setLoading(true);
+                      
+                      // Call API to claim rewards
+                      const result = await progressAPI.claimQuestRewards({
+                        walletAddress: publicKey.toString(),
+                        questId: 'solquest-onboarding',
+                        timestamp: new Date().toISOString()
+                      });
+                      
+                      if (result && result.success) {
+                        setRewardsClaimed(true);
+                        
+                        // Show confetti celebration
+                        const confettiCanvas = document.createElement('canvas');
+                        confettiCanvas.style.position = 'fixed';
+                        confettiCanvas.style.top = '0';
+                        confettiCanvas.style.left = '0';
+                        confettiCanvas.style.width = '100vw';
+                        confettiCanvas.style.height = '100vh';
+                        confettiCanvas.style.zIndex = '9999';
+                        confettiCanvas.style.pointerEvents = 'none';
+                        document.body.appendChild(confettiCanvas);
+                        
+                        const confettiEffect = confetti.create(confettiCanvas, {
+                          resize: true,
+                          useWorker: true
+                        });
+                        
+                        confettiEffect({
+                          particleCount: 200,
+                          spread: 160,
+                          origin: { y: 0.6 }
+                        });
+                        
+                        setTimeout(() => {
+                          document.body.removeChild(confettiCanvas);
+                        }, 3000);
+                        
+                        // Show success message with points from API
+                        alert(`Congratulations! You have claimed ${result.pointsEarned || 150} points and unlocked exclusive rewards!`);
+                      } else {
+                        setError('Failed to claim rewards. Please try again.');
+                      }
+                    } catch (err) {
+                      console.error('Error claiming rewards:', err);
+                      setError('Failed to claim rewards. Please try again.');
+                    } finally {
+                      setLoading(false);
+                    }
+                  } else if (rewardsClaimed) {
+                    alert('You have already claimed rewards for this quest!');
+                  }
+                }}
+                disabled={!socialCompleted || !nftCompleted || rewardsClaimed || loading}
+                className={`w-full ${rewardsClaimed ? 'bg-green-600 text-white cursor-not-allowed' : socialCompleted && nftCompleted ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white hover:opacity-90' : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'} px-4 py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center`}
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span>Completed</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Step 03 - Activity (Locked) */}
-            <div className="bg-gray-900/30 rounded-lg p-5 border border-gray-800/50 relative opacity-70">
-              <div className="absolute top-3 right-3">
-                <div className="bg-gray-700/20 text-gray-500 text-xs px-2 py-1 rounded-full flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  Locked
-                </div>
-              </div>
-              <div className="text-3xl font-bold text-gray-700 mb-3">03</div>
-              <h3 className="text-lg font-semibold text-gray-500 mb-1">Activity</h3>
-              <p className="text-gray-500 text-sm mb-4">Complete on-chain activity to earn additional rewards</p>
-              
-              <button 
-                disabled
-                className="w-full bg-gray-700 text-gray-400 px-4 py-2 rounded-lg font-medium cursor-not-allowed opacity-50"
-              >
-                Locked
-              </button>
-            </div>
-            
-            {/* Step 04 - Claim (Locked) */}
-            <div className="bg-gray-900/30 rounded-lg p-5 border border-gray-800/50 relative opacity-70">
-              <div className="absolute top-3 right-3">
-                <div className="bg-gray-700/20 text-gray-500 text-xs px-2 py-1 rounded-full flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  Locked
-                </div>
-              </div>
-              <div className="text-3xl font-bold text-gray-700 mb-3">04</div>
-              <h3 className="text-lg font-semibold text-gray-500 mb-1">Claim</h3>
-              <p className="text-gray-500 text-sm mb-4">Claim your rewards after completing all tasks</p>
-              
-              <button 
-                disabled
-                className="w-full bg-gray-700 text-gray-400 px-4 py-2 rounded-lg font-medium cursor-not-allowed opacity-50"
-              >
-                Locked
+                    Processing...
+                  </>
+                ) : rewardsClaimed ? (
+                  <span className="flex items-center">
+                    <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Rewards Claimed
+                  </span>
+                ) : socialCompleted && nftCompleted ? 'Claim Rewards' : 'Complete previous steps first'}
               </button>
             </div>
           </div>

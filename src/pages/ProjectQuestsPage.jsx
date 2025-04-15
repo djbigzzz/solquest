@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import useAuth from '../hooks/useAuth';
-import TwitterFollowQuest from '../components/TwitterFollowQuest';
-import NFTMintQuest from '../components/NFTMintQuest';
+import QuestsPage from './QuestsPage';
 
 const ProjectQuestsPage = () => {
   const { projectSlug } = useParams();
@@ -85,8 +84,7 @@ const ProjectQuestsPage = () => {
       ) : null}
 
       <div className="space-y-8">
-        <TwitterFollowQuest />
-        <NFTMintQuest />
+        <QuestsPage />
       </div>
     </div>
   );
