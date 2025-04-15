@@ -1,4 +1,4 @@
-// Health check endpoint for Vercel with MongoDB connection status
+// Direct MongoDB connection handler for Vercel
 const mongoose = require('mongoose');
 
 // Connection URI - using fallback if environment variables are not set
@@ -51,57 +51,35 @@ const connectToMongoDB = async () => {
   .catch(err => {
     connectionPromise = null;
     console.error('MongoDB connection error:', err);
-    return null; // Don't throw, just return null to continue health check
+    throw err;
   });
 
   return connectionPromise;
 };
 
+// API handler
 module.exports = async (req, res) => {
   try {
-    // Try to connect to MongoDB
     await connectToMongoDB();
     
-    // Check MongoDB connection status
-    let dbStatus = 'disconnected';
-    let dbDetails = null;
-    
-    // Only check MongoDB if we're not using memory DB
-    if (process.env.USE_MEMORY_DB !== 'true') {
-      // Check if mongoose is connected
-      if (mongoose.connection && mongoose.connection.readyState) {
-        dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'connecting';
-        
-        if (dbStatus === 'connected') {
-          dbDetails = {
-            host: mongoose.connection.host,
-            name: mongoose.connection.name,
-          };
-        }
-      }
-    } else {
-      dbStatus = 'memory-db';
-    }
-    
-    // Return health status
+    // Return connection status
     res.status(200).json({
       status: 'ok',
-      message: 'SolQuest API is healthy',
+      message: 'Database connection test',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
       database: {
-        status: dbStatus,
-        details: dbDetails,
-        connectionString: MONGODB_URI ? 'provided' : 'missing'
-      },
-      uptime: Math.floor(process.uptime()) + ' seconds'
+        status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        host: mongoose.connection.host,
+        name: mongoose.connection.name,
+        readyState: mongoose.connection.readyState
+      }
     });
   } catch (error) {
-    console.error('Health check error:', error);
+    console.error('DB connection test failed:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Health check failed',
-      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message,
+      message: 'Database connection test failed',
+      error: error.message
     });
   }
 };
