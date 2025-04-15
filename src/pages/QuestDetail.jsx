@@ -70,10 +70,8 @@ const QuestDetail = () => {
             patchedQuest.title &&
             (patchedQuest.title.toLowerCase().includes('twitter') || patchedQuest.title.toLowerCase().includes('x '))
           ) {
-            patchedQuest.title = patchedQuest.title.replace(/Twitter/gi, 'X');
-            if (patchedQuest.description) {
-              patchedQuest.description = patchedQuest.description.replace(/Twitter/gi, 'X (formerly Twitter)');
-            }
+            patchedQuest.title = 'X QUEST';
+            patchedQuest.description = 'Follow SolQuest on X to stay updated with the latest announcements and rewards.';
           }
           setQuest(patchedQuest);
           setSubtasks(patchedSubtasks);
@@ -392,46 +390,102 @@ const QuestDetail = () => {
     {subtasks.length === 0 && (
       <div className="text-gray-400">No tasks available for this quest.</div>
     )}
-    {subtasks.map((subtask) => (
-      <div key={subtask.id}>
-        <QuestSubtask 
-          subtask={subtask} 
-          onStart={handleSubtaskStart}
-          onComplete={handleSubtaskComplete}
-        />
-        {/* Extra task links */}
-        {subtask.socialLink && !subtask.completed && (
-          <div className="mt-2 ml-8 mb-4">
-            <a 
-              href={subtask.socialLink} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-solana-purple hover:text-solana-green text-sm flex items-center"
+    {/* For X quest, show simplified steps */}
+    {quest && quest.title === 'X QUEST' ? (
+      // This is X quest - show simplified steps
+      <div className="space-y-6">
+        {/* Step 1: Follow SolQuest on X */}
+        <div className="border border-gray-700 rounded-lg p-4 transition-colors duration-300">
+          <div className="flex justify-between items-center">
+            <div className="flex-1">
+              <div className="flex items-center">
+                <div className="h-5 w-5 rounded-full border-2 border-gray-500 mr-3 flex items-center justify-center">1</div>
+                <h3 className="font-medium text-white">Follow SolQuest on X</h3>
+              </div>
+              <p className="text-gray-400 text-sm ml-8">Click the Start button to open X and follow SolQuest</p>
+              <div className="text-xs text-gray-500 mt-1 ml-8">+100 XP</div>
+            </div>
+            <button
+              onClick={() => {
+                const xSubtask = subtasks.find(s => s.type === 'x' || s.title.toLowerCase().includes('x') || s.title.toLowerCase().includes('twitter'));
+                if (xSubtask) {
+                  window.open('https://x.com/SolQuestio', '_blank', 'noopener');
+                  if (handleSubtaskStart) handleSubtaskStart(xSubtask.id);
+                }
+              }}
+              className="bg-solana-green hover:bg-opacity-80 text-white text-sm px-3 py-1 rounded-full transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              Visit to complete this task
-            </a>
+              Start
+            </button>
           </div>
-        )}
-        {subtask.nftLink && !subtask.completed && (
-          <div className="mt-2 ml-8 mb-4">
-            <a 
-              href={subtask.nftLink} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-solana-purple hover:text-solana-green text-sm flex items-center"
+        </div>
+        
+        {/* Step 2: Validate you followed */}
+        <div className="border border-gray-700 rounded-lg p-4 transition-colors duration-300">
+          <div className="flex justify-between items-center">
+            <div className="flex-1">
+              <div className="flex items-center">
+                <div className="h-5 w-5 rounded-full border-2 border-gray-500 mr-3 flex items-center justify-center">2</div>
+                <h3 className="font-medium text-white">Verify you followed SolQuest</h3>
+              </div>
+              <p className="text-gray-400 text-sm ml-8">Validate your follow to earn XP points</p>
+              <div className="text-xs text-gray-500 mt-1 ml-8">+100 XP</div>
+            </div>
+            <button
+              onClick={() => {
+                const xSubtask = subtasks.find(s => s.type === 'x' || s.title.toLowerCase().includes('x') || s.title.toLowerCase().includes('twitter'));
+                if (xSubtask && handleSubtaskComplete) handleSubtaskComplete(xSubtask.id);
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded-full transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              Purchase NFT
-            </a>
+              Validate
+            </button>
           </div>
-        )}
+        </div>
       </div>
-    ))}
+    ) : (
+      // For all other quests, keep the original rendering
+      subtasks.map((subtask) => (
+        <div key={subtask.id}>
+          <QuestSubtask 
+            subtask={subtask} 
+            onStart={handleSubtaskStart}
+            onComplete={handleSubtaskComplete}
+          />
+          {/* Extra task links */}
+          {subtask.socialLink && !subtask.completed && (
+            <div className="mt-2 ml-8 mb-4">
+              <a 
+                href={subtask.socialLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-solana-purple hover:text-solana-green text-sm flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Visit to complete this task
+              </a>
+            </div>
+          )}
+          {subtask.nftLink && !subtask.completed && (
+            <div className="mt-2 ml-8 mb-4">
+              <a 
+                href={subtask.nftLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-solana-purple hover:text-solana-green text-sm flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Purchase NFT
+              </a>
+            </div>
+          )}
+        </div>
+      ))
+    )}
   </div>
 </div>
         </div>
