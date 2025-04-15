@@ -3,6 +3,8 @@ import { useWallet } from '@solana/wallet-adapter-react';
 
 const QuestSubtask = ({ subtask, onStart, onComplete }) => {
   const { id, title, description, xp, completed, started, type, socialLink } = subtask;
+  // Debug: Log subtask and type on render
+  console.log('[DEBUG] QuestSubtask render', { subtask, type });
   const { connected } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [isStarted, setIsStarted] = useState(started || false);
@@ -28,6 +30,7 @@ const QuestSubtask = ({ subtask, onStart, onComplete }) => {
   }, [cooldown, isStarted, isCompleted, isSocial]);
 
   const handleStart = async () => {
+    console.log('[DEBUG] handleStart called', { type, socialUrl, isSocial, connected });
     if (!connected) {
       alert('Please connect your wallet to start this subtask');
       return;
@@ -128,7 +131,10 @@ const QuestSubtask = ({ subtask, onStart, onComplete }) => {
           <div className="flex flex-col items-end">
             {!isStarted ? (
               <button
-                onClick={handleStart}
+                onClick={() => {
+                  console.log('[DEBUG] Start button clicked', { enabled: !(!connected || isLoading), connected, isLoading });
+                  handleStart();
+                }}
                 className="bg-solana-green hover:bg-opacity-80 text-white text-sm px-3 py-1 rounded-full transition-colors"
                 disabled={!connected || isLoading}
               >
