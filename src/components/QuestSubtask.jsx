@@ -12,9 +12,9 @@ const QuestSubtask = ({ subtask, onStart, onComplete }) => {
   const [validationLoading, setValidationLoading] = useState(false);
   const [validationSuccess, setValidationSuccess] = useState(false);
 
-  // Social subtask: Twitter, Discord, etc.
-  const isSocial = type === 'twitter' || type === 'discord' || type === 'telegram';
-  const socialUrl = socialLink || (type === 'twitter' ? 'https://x.com/SolQuestio' : '');
+  // Social subtask: X (formerly Twitter), Discord, etc.
+  const isSocial = type === 'x' || type === 'discord' || type === 'telegram';
+  const socialUrl = socialLink || (type === 'x' ? 'https://x.com/SolQuestio' : '');
 
   // Cooldown effect
   useEffect(() => {
@@ -63,7 +63,7 @@ const QuestSubtask = ({ subtask, onStart, onComplete }) => {
           questId: subtask.questId,
           subtaskId: id,
           type,
-          description: `Completed ${type} task: ${title}`,
+          description: `Completed ${type === 'x' ? 'X (formerly Twitter)' : type} task: ${title}`,
           points: xp
         })
       });

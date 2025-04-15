@@ -48,9 +48,26 @@ const QuestDetail = () => {
         const questData = await fetchQuestById(mappedQuestId);
         
         if (questData) {
+          // Patch subtasks: ensure X (formerly Twitter) quest is recognized and rebranded
+          const patchedSubtasks = (questData.subtasks || []).map(subtask => {
+            if (
+              subtask.title &&
+              (subtask.title.toLowerCase().includes('twitter') || subtask.title.toLowerCase().includes('x '))
+            ) {
+              return {
+                ...subtask,
+                type: 'x',
+                socialLink: 'https://x.com/SolQuestio',
+                title: subtask.title.replace(/Twitter/gi, 'X'),
+                description: subtask.description ? subtask.description.replace(/Twitter/gi, 'X (formerly Twitter)') : ''
+              };
+            }
+            return subtask;
+          });
           setQuest(questData);
-          setSubtasks(questData.subtasks || []);
+          setSubtasks(patchedSubtasks);
           setApiStatus({ connected: true, message: 'Connected to SolQuest API' });
+          console.log('[DEBUG] Subtasks:', patchedSubtasks);
         } else {
           setApiStatus({ 
             connected: false, 
