@@ -30,10 +30,20 @@ const connectToDatabase = async () => {
   console.log('Database connection established');
 };
 
-// Initialize database connection
-connectToDatabase().catch(err => {
-  console.error('Database connection error:', err.message);
-});
+// Initialize database connection with better error handling
+(async () => {
+  try {
+    await connectToDatabase();
+    console.log('Database connection initialized successfully');
+  } catch (err) {
+    console.error('CRITICAL: Database connection error:', err.message);
+    // In production, we might want to exit the process if DB connection fails
+    if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_NO_DB) {
+      console.error('Exiting due to database connection failure in production');
+      process.exit(1); // Exit with error code
+    }
+  }
+})();
 
 // Middleware
 app.use(helmet()); // Security headers
