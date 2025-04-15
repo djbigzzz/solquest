@@ -1,0 +1,142 @@
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const REFRESH_INTERVAL = 30000; // 30 seconds
+const BRAND_ACCENT = '#7B5FFF';
+const BRAND_BG = '#18192A';
+const BRAND_CARD = '#23243A';
+const BRAND_TEXT = '#FFF';
+
+// Set your admin username/password in environment variables for production
+const ADMIN_USER = process.env.REACT_APP_MONITOR_USER || 'admin';
+const ADMIN_PASS = process.env.REACT_APP_MONITOR_PASS || 'solquest2025';
+
+function AdminMonitor() {
+  const [status, setStatus] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [auth, setAuth] = useState(() => sessionStorage.getItem('solquest_admin_auth') === 'true');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!auth) return;
+    fetchStatus();
+    const interval = setInterval(fetchStatus, REFRESH_INTERVAL);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line
+  }, [auth]);
+
+  const fetchStatus = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [health, db, quests, users] = await Promise.all([
+        axios.get('/api/health'),
+        axios.get('/api/db-connect'),
+        axios.get('/api/quests'),
+        axios.get('/api/users'),
+      ]);
+      setStatus({
+        health: health.data,
+        db: db.data,
+        quests: quests.data,
+        questsCount: Array.isArray(quests.data) ? quests.data.length : 0,
+        users: users.data,
+        usersCount: Array.isArray(users.data) ? users.data.length : 0,
+        lastUpdated: new Date().toLocaleString(),
+      });
+    } catch (err) {
+      setError(err.message || 'Failed to fetch status');
+    }
+    setLoading(false);
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    setLoginError('');
+    if (username === ADMIN_USER && password === ADMIN_PASS) {
+      setAuth(true);
+      sessionStorage.setItem('solquest_admin_auth', 'true');
+    } else {
+      setLoginError('Invalid username or password.');
+    }
+  };
+
+  if (!auth) {
+    return (
+      <div style={{ background: BRAND_BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <form onSubmit={handleLogin} style={{ background: BRAND_CARD, padding: 40, borderRadius: 16, boxShadow: '0 2px 16px #0008', width: 340 }}>
+          <h2 style={{ color: BRAND_ACCENT, marginBottom: 28, textAlign: 'center', fontFamily: 'Montserrat, Arial, sans-serif' }}>SolQuest Admin Login</h2>
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            style={{ width: '100%', padding: 12, marginBottom: 16, borderRadius: 8, border: '1px solid #333', background: '#191a2f', color: BRAND_TEXT, fontSize: 16 }}
+            autoFocus
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            style={{ width: '100%', padding: 12, marginBottom: 18, borderRadius: 8, border: '1px solid #333', background: '#191a2f', color: BRAND_TEXT, fontSize: 16 }}
+          />
+          {loginError && <div style={{ color: '#ff6b6b', marginBottom: 10 }}>{loginError}</div>}
+          <button type="submit" style={{ width: '100%', padding: 12, borderRadius: 8, border: 'none', background: BRAND_ACCENT, color: '#fff', fontWeight: 700, fontSize: 16, cursor: 'pointer', marginBottom: 8 }}>Login</button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: BRAND_BG, minHeight: '100vh', padding: 32, maxWidth: 1000, margin: '0 auto', color: BRAND_TEXT, fontFamily: 'Montserrat, Arial, sans-serif' }}>
+      <h1 style={{ color: BRAND_ACCENT, marginBottom: 24 }}>SolQuest Live Monitor</h1>
+      {error && <div style={{ color: '#ff6b6b', marginBottom: 10 }}>Error: {error}</div>}
+      {loading ? <div>Loading...</div> : (
+        <>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 32 }}>
+            <StatusCard label="API Health" value={status.health?.status} details={status.health?.message} ok={status.health?.status === 'ok'} />
+            <StatusCard label="DB Connection" value={status.db?.database?.status} details={status.db?.database?.host} ok={status.db?.database?.status === 'connected'} />
+            <StatusCard label="Quests" value={status.questsCount} details="Total quests" ok={typeof status.questsCount === 'number'} />
+            <StatusCard label="Users" value={status.usersCount} details="Total users" ok={typeof status.usersCount === 'number'} />
+            <StatusCard label="Last Updated" value={status.lastUpdated} ok={true} />
+          </div>
+          <div>
+            <h2 style={{ color: BRAND_ACCENT }}>API Health Details</h2>
+            <pre style={{ background: '#23243A', padding: 16, borderRadius: 8, color: '#a8ffb0' }}>{JSON.stringify(status.health, null, 2)}</pre>
+          </div>
+          <div>
+            <h2 style={{ color: BRAND_ACCENT }}>DB Connection Details</h2>
+            <pre style={{ background: '#23243A', padding: 16, borderRadius: 8, color: '#a8ffb0' }}>{JSON.stringify(status.db, null, 2)}</pre>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function StatusCard({ label, value, details, ok }) {
+  return (
+    <div style={{
+      background: ok ? '#1e4620' : '#46201e',
+      color: ok ? '#a8ffb0' : '#ffb0b0',
+      padding: 24,
+      borderRadius: 12,
+      minWidth: 160,
+      minHeight: 90,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+      flex: '1 0 160px',
+    }}>
+      <div style={{ fontWeight: 600, fontSize: 18 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 700 }}>{value}</div>
+      {details && <div style={{ fontSize: 13, marginTop: 6 }}>{details}</div>}
+    </div>
+  );
+}
+
+export default AdminMonitor;

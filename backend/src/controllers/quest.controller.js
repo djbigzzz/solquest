@@ -1,13 +1,17 @@
 const mongoose = require('mongoose');
 const Quest = require('../models/quest.model');
 const QuestProgress = require('../models/questProgress.model');
+const connectDB = require('../config/database');
 
 /**
  * Get all quests
  * @route GET /api/quests
  */
+const connectDB = require('../config/database');
+
 const getAllQuests = async (req, res) => {
   try {
+    await connectDB();
     const quests = await Quest.find({ active: true });
     res.json(quests);
   } catch (error) {
@@ -24,6 +28,7 @@ const getAllQuests = async (req, res) => {
  */
 const getQuestById = async (req, res) => {
   try {
+    await connectDB();
     // Try to find by slug first (for string IDs like 'solana-basics')
     let quest = await Quest.findOne({ slug: req.params.id });
     
@@ -54,6 +59,7 @@ const getQuestById = async (req, res) => {
  */
 const createQuest = async (req, res) => {
   try {
+    await connectDB();
     const {
       title,
       description,
@@ -94,6 +100,7 @@ const createQuest = async (req, res) => {
  */
 const updateQuest = async (req, res) => {
   try {
+    await connectDB();
     // Find quest by slug first, then by ID
     let quest = await Quest.findOne({ slug: req.params.id });
     
@@ -147,6 +154,7 @@ const updateQuest = async (req, res) => {
  */
 const deleteQuest = async (req, res) => {
   try {
+    await connectDB();
     // Find quest by slug first, then by ID
     let quest = await Quest.findOne({ slug: req.params.id });
     
@@ -181,6 +189,7 @@ const deleteQuest = async (req, res) => {
  */
 const startQuest = async (req, res) => {
   try {
+    await connectDB();
     // Check if quest exists - try by slug first, then by ID
     let quest = await Quest.findOne({ slug: req.params.id });
     
@@ -234,6 +243,7 @@ const startQuest = async (req, res) => {
  */
 const completeQuest = async (req, res) => {
   try {
+    await connectDB();
     // Check if quest exists - try by slug first, then by ID
     let quest = await Quest.findOne({ slug: req.params.id });
     

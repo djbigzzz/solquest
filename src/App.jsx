@@ -8,6 +8,7 @@ import ProjectQuestsPage from './pages/ProjectQuestsPage';
 import ProfilePage from './pages/ProfilePage';
 import SocialConnectionsPage from './pages/SocialConnectionsPage';
 import WalletContextProvider from './context/WalletContextProvider';
+import AdminMonitor from './pages/AdminMonitor';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
               <Route path="/project/:projectSlug" element={<ProjectQuestsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/social-connections" element={<SocialConnectionsPage />} />
+              <Route path="/admin/monitor" element={<AdminMonitor />} />
             </Routes>
           </main>
         </div>

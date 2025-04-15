@@ -4,12 +4,9 @@
  */
 import axios from 'axios';
 
-// API Configuration
-const IS_DEV = import.meta.env.DEV || process.env.NODE_ENV === 'development';
+// Set API base URL from environment variable
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
-// Development vs Production URLs
-const DEV_API_URL = 'http://localhost:5000';
-const PROD_PRIMARY_API_URL = 'https://solquest.io'; // Main domain with API routes
 const PROD_FALLBACK_API_URL = 'https://solquest-app-new.vercel.app'; // Vercel deployment URL as fallback
 
 // Use environment variables if available, otherwise use defaults

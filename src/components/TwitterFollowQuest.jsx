@@ -170,7 +170,7 @@ const XFollowQuest = () => {
         </div>
       </div>
       
-      {/* Task Steps */}
+      {/* Task Steps - Numbered approach */}
       <div className="px-4 py-4 border-t border-gray-800">
         <div className="flex items-center space-x-2 mb-4">
           {steps.map((step, index) => (
@@ -181,21 +181,125 @@ const XFollowQuest = () => {
           ))}
         </div>
         
-        {/* Task Navigation - Simplified to 2 steps */}
-        <div className="flex justify-between mb-4">
-          <button 
-            onClick={() => setActiveTask(1)}
-            className={`px-2 py-1 text-xs rounded-full ${activeTask === 1 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}
-          >
-            1. Follow
-          </button>
-          <button 
-            onClick={() => setActiveTask(2)}
-            className={`px-2 py-1 text-xs rounded-full ${activeTask === 2 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'} ${!started ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={!started}
-          >
-            2. Verify
-          </button>
+        {/* Step 01 - Follow */}
+        <div 
+          className={`mb-4 p-4 rounded-lg ${activeTask === 1 ? 'bg-blue-900/30 border border-blue-600/30' : 'bg-gray-800/50'} cursor-pointer transition-all`}
+          onClick={() => setActiveTask(1)}
+        >
+          <div className="flex items-start">
+            <div className="flex-shrink-0 mr-3">
+              <div className="text-2xl font-bold text-gray-600">01</div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-md font-semibold text-white mb-1">Follow on X</h3>
+              <p className="text-gray-400 text-sm mb-3">Follow SolQuest on X to stay updated with the latest announcements</p>
+              
+              {activeTask === 1 && !started && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStartQuest();
+                  }}
+                  disabled={loading || !connected || !isAuthenticated || completed}
+                  className="w-full py-2 px-4 rounded-lg font-medium text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                >
+                  {loading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                      </svg>
+                      Start
+                    </span>
+                  )}
+                </button>
+              )}
+              
+              {started && (
+                <div className="flex items-center text-green-400 justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>Started</span>
+                </div>
+              )}
+            </div>
+            <div className="ml-2">
+              {steps[0].complete ? (
+                <div className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-full">Completed</div>
+              ) : activeTask === 1 ? (
+                <div className="bg-blue-500/20 text-blue-400 text-xs px-2 py-1 rounded-full">Active</div>
+              ) : (
+                <div className="bg-gray-700/20 text-gray-500 text-xs px-2 py-1 rounded-full">Pending</div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Step 02 - Verify */}
+        <div 
+          className={`mb-4 p-4 rounded-lg ${activeTask === 2 ? 'bg-blue-900/30 border border-blue-600/30' : 'bg-gray-800/50'} ${!started ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} transition-all`}
+          onClick={() => started && setActiveTask(2)}
+        >
+          <div className="flex items-start">
+            <div className="flex-shrink-0 mr-3">
+              <div className="text-2xl font-bold text-gray-600">02</div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-md font-semibold text-white mb-1">Verify Follow</h3>
+              <p className="text-gray-400 text-sm mb-3">Verify that you've followed SolQuest on X</p>
+              
+              {activeTask === 2 && started && !completed && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleVerifyQuest();
+                  }}
+                  disabled={loading || !connected || !isAuthenticated || !started || completed}
+                  className="w-full py-2 px-4 rounded-lg font-medium text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                >
+                  {loading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : (
+                    <span>Verify</span>
+                  )}
+                </button>
+              )}
+              
+              {completed && (
+                <div className="flex items-center text-green-400 justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>Verified</span>
+                </div>
+              )}
+            </div>
+            <div className="ml-2">
+              {completed ? (
+                <div className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-full">Completed</div>
+              ) : !started ? (
+                <div className="bg-gray-700/20 text-gray-500 text-xs px-2 py-1 rounded-full">Locked</div>
+              ) : activeTask === 2 ? (
+                <div className="bg-blue-500/20 text-blue-400 text-xs px-2 py-1 rounded-full">Active</div>
+              ) : (
+                <div className="bg-gray-700/20 text-gray-500 text-xs px-2 py-1 rounded-full">Pending</div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -225,53 +329,9 @@ const XFollowQuest = () => {
         </div>
       </div>
       
-      {/* Action Button */}
-      <div className="px-4 pb-4">
-        {!completed ? (
-          <>
-            {activeTask === 1 && (
-              <button
-                onClick={handleStartQuest}
-                disabled={loading || !connected || !isAuthenticated || completed}
-                className="w-full py-3 px-4 rounded-lg font-medium text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-              >
-                {loading ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </span>
-                ) : (
-                  <span>Follow on X</span>
-                )}
-              </button>
-            )}
-            
-            {activeTask === 2 && (
-              <button
-                onClick={handleVerifyQuest}
-                disabled={loading || !connected || !isAuthenticated || !started || completed}
-                className="w-full py-3 px-4 rounded-lg font-medium text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-              >
-                {loading ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </span>
-                ) : (
-                  <span>Verify X Follow</span>
-                )}
-              </button>
-            )}
-            
-            {/* Removed third step */}
-          </>
-        ) : (
+      {/* Completion Message */}
+      {completed && (
+        <div className="px-4 pb-4">
           <div className="bg-green-900/20 border border-green-700/30 rounded-lg p-3 text-center">
             <div className="flex items-center justify-center text-green-400">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -281,8 +341,8 @@ const XFollowQuest = () => {
             </div>
             <p className="text-xs text-green-300/70 mt-1">You've earned {xpReward} points</p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       
       {/* Error Message - Only show if there's an error */}
       {error && (
