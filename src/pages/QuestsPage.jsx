@@ -20,11 +20,11 @@ function QuestsPage() {
       ) : null}
       
       {/* Main Quest Section */}
-      <div className="max-w-sm mx-auto space-y-6">
-        <div className="w-full">
+      <div className="max-w-xs mx-auto space-y-6">
+        <div className="w-full border-2 border-blue-500/30 rounded-lg overflow-hidden">
           <TwitterFollowQuest />
         </div>
-        <div className="w-full">
+        <div className="w-full border-2 border-pink-500/30 rounded-lg overflow-hidden">
           <NFTMintQuest />
         </div>
       </div>

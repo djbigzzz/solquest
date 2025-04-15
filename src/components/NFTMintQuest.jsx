@@ -125,20 +125,20 @@ function NFTMintQuest() {
 
   // Render quest card
   return (
-    <div className="bg-black rounded-lg overflow-hidden shadow-md border border-gray-800 hover:border-purple-500/30 transition-all">
+    <div className="rounded-lg overflow-hidden bg-gradient-to-b from-pink-900/30 to-purple-900/30 border-2 border-pink-500/50 shadow-lg">
       {/* Quest Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-900">
+      <div className="bg-gradient-to-r from-pink-800 to-purple-800 px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
-          <div className="bg-gray-800 text-xs text-gray-400 px-2 py-1 rounded mr-2">Premium Quest</div>
-          <div className="flex items-center text-xs text-gray-400">
+          <div className="bg-pink-700 text-xs text-white px-2 py-1 rounded-full font-bold mr-2">Premium Quest</div>
+          <div className="flex items-center text-xs text-white">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Limited Time
           </div>
         </div>
-        <div className="bg-pink-900/40 rounded px-2 py-1">
-          <span className="text-xs font-medium text-pink-300">NFT</span>
+        <div className="bg-gradient-to-r from-pink-500 to-pink-600 rounded-full px-3 py-1">
+          <span className="text-xs font-bold text-white">NFT</span>
         </div>
       </div>
 

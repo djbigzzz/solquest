@@ -224,10 +224,26 @@ const QuestDetail = () => {
       )}
       
       <div className="bg-dark-card rounded-lg overflow-hidden shadow-lg mb-8">
+  {/* Connected Wallet Display */}
+  <div className="flex items-center justify-end px-6 pt-4">
+    {connected && publicKey ? (
+      <span className="bg-solana-purple text-white px-3 py-1 rounded-lg text-xs font-mono">
+        Connected: {formatWalletAddress(publicKey.toString())}
+      </span>
+    ) : (
+      <button
+        className="bg-gradient-to-r from-solana-purple to-solana-green text-white px-3 py-1 rounded-lg text-xs font-medium hover:opacity-90 transition-opacity"
+        onClick={() => window.dispatchEvent(new Event('openWalletModal'))} // You may need to replace with your wallet connect logic
+      >
+        Connect Wallet
+      </button>
+    )}
+  </div>
         <div className="relative">
           <img 
-            src={quest.image || solanaBasicsImg} 
+            src={quest.image && quest.image.length > 0 ? quest.image : solanaBasicsImg} 
             alt={quest.title} 
+            onError={e => { e.target.onerror = null; e.target.src = solanaBasicsImg; }}
             className="w-full h-48 md:h-64 object-cover"
           />
           {quest.featured && (
@@ -287,48 +303,76 @@ const QuestDetail = () => {
             </div>
           </div>
           
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-white mb-2">Subtasks</h2>
-            
-            {subtasks.map((subtask) => (
-              <div key={subtask.id}>
-                <QuestSubtask 
-                  subtask={subtask} 
-                  onComplete={handleSubtaskComplete}
-                />
-                {subtask.socialLink && !subtask.completed && (
-                  <div className="mt-2 ml-8 mb-4">
-                    <a 
-                      href={subtask.socialLink} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-solana-purple hover:text-solana-green text-sm flex items-center"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                      Visit to complete this task
-                    </a>
-                  </div>
-                )}
-                {subtask.nftLink && !subtask.completed && (
-                  <div className="mt-2 ml-8 mb-4">
-                    <a 
-                      href={subtask.nftLink} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-solana-purple hover:text-solana-green text-sm flex items-center"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                      Purchase NFT
-                    </a>
-                  </div>
-                )}
-              </div>
-            ))}
+          <div className="flex flex-col md:flex-row gap-8">
+  {/* Left: Partner Logo & Info */}
+  <div className="md:w-1/3 flex flex-col items-center md:items-start justify-start mb-6 md:mb-0">
+    {quest.partner && (
+      <div className="flex flex-col items-center md:items-start">
+        <img 
+          src={quest.partner.logo} 
+          alt={quest.partner.name} 
+          className="w-20 h-20 rounded-full border-4 border-solana-purple mb-2 object-cover bg-white"
+          onError={e => { e.target.onerror = null; e.target.src = solanaBasicsImg; }}
+        />
+        <a 
+          href={quest.partner.website} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-solana-green hover:text-solana-green-light font-semibold text-lg mt-1"
+        >
+          {quest.partner.name}
+        </a>
+        <span className="text-gray-400 text-xs mt-1">Official Partner</span>
+      </div>
+    )}
+  </div>
+  {/* Right: Tasks/Steps List */}
+  <div className="md:w-2/3 space-y-4">
+    <h2 className="text-xl font-semibold text-white mb-2">Tasks to Complete</h2>
+    {subtasks.length === 0 && (
+      <div className="text-gray-400">No tasks available for this quest.</div>
+    )}
+    {subtasks.map((subtask) => (
+      <div key={subtask.id}>
+        <QuestSubtask 
+          subtask={subtask} 
+          onComplete={handleSubtaskComplete}
+        />
+        {/* Extra task links */}
+        {subtask.socialLink && !subtask.completed && (
+          <div className="mt-2 ml-8 mb-4">
+            <a 
+              href={subtask.socialLink} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-solana-purple hover:text-solana-green text-sm flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Visit to complete this task
+            </a>
           </div>
+        )}
+        {subtask.nftLink && !subtask.completed && (
+          <div className="mt-2 ml-8 mb-4">
+            <a 
+              href={subtask.nftLink} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-solana-purple hover:text-solana-green text-sm flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Purchase NFT
+            </a>
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+</div>
         </div>
         
         <div className="p-6 border-t border-gray-700">
