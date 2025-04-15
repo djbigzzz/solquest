@@ -20,7 +20,30 @@ function AdminMonitor() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [apiError, setApiError] = useState(null);
   const navigate = useNavigate();
+
+  // Log errors to console
+  useEffect(() => {
+    if (error || loginError || apiError) {
+      console.error('Admin Monitor Error:', {
+        error,
+        loginError,
+        apiError,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [error, loginError, apiError]);
+
+  // Show loading state while fetching data
+  const showLoading = loading || !status.health;
+
+  // Handle API errors
+  const handleApiError = (error) => {
+    setApiError(error.message || 'Failed to fetch status data');
+    setError(error.message || 'Failed to fetch status data');
+    setLoading(false);
+  };
 
   useEffect(() => {
     if (!auth) return;
@@ -33,6 +56,7 @@ function AdminMonitor() {
   const fetchStatus = async () => {
     setLoading(true);
     setError(null);
+    setApiError(null);
     try {
       const [health, db, quests, users] = await Promise.all([
         axios.get('/api/health'),
@@ -40,6 +64,12 @@ function AdminMonitor() {
         axios.get('/api/quests'),
         axios.get('/api/users'),
       ]);
+      
+      // Validate API responses
+      if (!health.data || !db.data) {
+        throw new Error('API response missing required data');
+      }
+
       setStatus({
         health: health.data,
         db: db.data,
@@ -50,7 +80,7 @@ function AdminMonitor() {
         lastUpdated: new Date().toLocaleString(),
       });
     } catch (err) {
-      setError(err.message || 'Failed to fetch status');
+      handleApiError(err);
     }
     setLoading(false);
   };
@@ -96,7 +126,66 @@ function AdminMonitor() {
   return (
     <div style={{ background: BRAND_BG, minHeight: '100vh', padding: 32, maxWidth: 1000, margin: '0 auto', color: BRAND_TEXT, fontFamily: 'Montserrat, Arial, sans-serif' }}>
       <h1 style={{ color: BRAND_ACCENT, marginBottom: 24 }}>SolQuest Live Monitor</h1>
-      {error && <div style={{ color: '#ff6b6b', marginBottom: 10 }}>Error: {error}</div>}
+      
+      {/* Loading State */}
+      {showLoading && (
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ fontSize: '24px', color: BRAND_ACCENT }}>Loading...</div>
+          <div style={{ marginTop: '16px', color: '#a8ffb0' }}>Fetching system status...</div>
+        </div>
+      )}
+
+      {/* API Error State */}
+      {apiError && (
+        <div style={{
+          background: '#2a1919',
+          padding: '20px',
+          borderRadius: '8px',
+          marginBottom: '24px',
+          border: '1px solid #ff6b6b'
+        }}>
+          <h3 style={{ color: '#ff6b6b', marginBottom: '12px' }}>API Error</h3>
+          <p style={{ color: '#ff6b6b' }}>{apiError}</p>
+          <button
+            onClick={() => {
+              setApiError(null);
+              fetchStatus();
+            }}
+            style={{
+              background: BRAND_ACCENT,
+              color: '#fff',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              border: 'none',
+              cursor: 'pointer',
+              marginTop: '12px'
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!showLoading && !apiError && (
+        <>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 32 }}>
+            <StatusCard label="API Health" value={status.health?.status} details={status.health?.message} ok={status.health?.status === 'ok'} />
+            <StatusCard label="DB Connection" value={status.db?.database?.status} details={status.db?.database?.host} ok={status.db?.database?.status === 'connected'} />
+            <StatusCard label="Quests" value={status.questsCount} details="Total quests" ok={typeof status.questsCount === 'number'} />
+            <StatusCard label="Users" value={status.usersCount} details="Total users" ok={typeof status.usersCount === 'number'} />
+            <StatusCard label="Last Updated" value={status.lastUpdated} ok={true} />
+          </div>
+          <div>
+            <h2 style={{ color: BRAND_ACCENT }}>API Health Details</h2>
+            <pre style={{ background: '#23243A', padding: 16, borderRadius: 8, color: '#a8ffb0' }}>{JSON.stringify(status.health, null, 2)}</pre>
+          </div>
+          <div>
+            <h2 style={{ color: BRAND_ACCENT }}>DB Connection Details</h2>
+            <pre style={{ background: '#23243A', padding: 16, borderRadius: 8, color: '#a8ffb0' }}>{JSON.stringify(status.db, null, 2)}</pre>
+          </div>
+        </>
+      )}
       {loading ? <div>Loading...</div> : (
         <>
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 32 }}>
