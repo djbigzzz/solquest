@@ -77,6 +77,36 @@ const QuestDetail = () => {
     loadQuestData();
   }, [questId, fetchQuestById, retryCount, quest]);
 
+  const handleSubtaskStart = async (subtaskId) => {
+    if (!connected || !isAuthenticated) {
+      alert('Please connect your wallet and sign in to start this subtask');
+      return;
+    }
+    try {
+      // Send start data to the backend
+      const result = await startQuest(quest.id, {
+        walletAddress: publicKey.toString(),
+        subtaskId,
+        timestamp: new Date().toISOString()
+      });
+      if (result && result.success) {
+        setSubtasks(prevSubtasks =>
+          prevSubtasks.map(subtask =>
+            subtask.id === subtaskId ? { ...subtask, started: true } : subtask
+          )
+        );
+        if (result.offline) {
+          alert('You are in offline mode. Progress will sync when reconnected.');
+        }
+      } else {
+        alert('Failed to start subtask. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error starting subtask:', err);
+      alert('Failed to start subtask. Please try again.');
+    }
+  };
+
   const handleSubtaskComplete = async (subtaskId) => {
     if (!connected || !isAuthenticated) {
       alert('Please connect your wallet and sign in to complete this subtask');
@@ -116,6 +146,7 @@ const QuestDetail = () => {
       alert('Failed to complete subtask. Please try again.');
     }
   };
+
   
 
   // Function to show celebration animation
@@ -336,6 +367,7 @@ const QuestDetail = () => {
       <div key={subtask.id}>
         <QuestSubtask 
           subtask={subtask} 
+          onStart={handleSubtaskStart}
           onComplete={handleSubtaskComplete}
         />
         {/* Extra task links */}
