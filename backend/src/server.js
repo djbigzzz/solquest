@@ -3,6 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
+const mongoose = require('mongoose');
 const connectDB = require('./config/database');
 const { connectMemoryDB } = require('./config/database-memory');
 
@@ -33,8 +34,24 @@ const connectToDatabase = async () => {
 // Initialize database connection with better error handling
 (async () => {
   try {
+    // Log MongoDB connection string (with credentials masked)
+    const mongoURI = process.env.MONGODB_URI || process.env.MONGODB_URI_PROD;
+    if (mongoURI) {
+      const maskedURI = mongoURI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@');
+      console.log(`Attempting to connect to MongoDB: ${maskedURI}`);
+    } else {
+      console.error('WARNING: No MongoDB connection string found in environment variables');
+    }
+    
     await connectToDatabase();
     console.log('Database connection initialized successfully');
+    
+    // Log connection details
+    if (mongoose.connection) {
+      console.log(`MongoDB connected to: ${mongoose.connection.host}`);
+      console.log(`Database name: ${mongoose.connection.name}`);
+      console.log(`Connection state: ${mongoose.connection.readyState}`);
+    }
   } catch (err) {
     console.error('CRITICAL: Database connection error:', err.message);
     // In production, we might want to exit the process if DB connection fails
@@ -55,6 +72,40 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json()); // Parse JSON bodies
 app.use(morgan('dev')); // HTTP request logger
+
+// Health check route - must be defined before other routes
+app.get('/api/health', (req, res) => {
+  // Check MongoDB connection status
+  let dbStatus = 'disconnected';
+  let dbDetails = null;
+  
+  // Only check MongoDB if we're not using memory DB
+  if (process.env.USE_MEMORY_DB !== 'true' && mongoose.connection) {
+    dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'connecting';
+    
+    if (dbStatus === 'connected') {
+      dbDetails = {
+        host: mongoose.connection.host,
+        name: mongoose.connection.name,
+      };
+    }
+  } else if (process.env.USE_MEMORY_DB === 'true') {
+    dbStatus = 'memory-db';
+  }
+  
+  // Return health status
+  res.status(200).json({
+    status: 'ok',
+    message: 'SolQuest API is healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    database: {
+      status: dbStatus,
+      details: dbDetails,
+    },
+    uptime: Math.floor(process.uptime()) + ' seconds'
+  });
+});
 
 // Routes
 app.use('/api/auth', require('./routes/auth.routes'));
