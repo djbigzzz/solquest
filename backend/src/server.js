@@ -53,6 +53,7 @@ app.use('/api/quests', require('./routes/quest.routes'));
 app.use('/api/referrals', require('./routes/referral.routes'));
 app.use('/api/leaderboard', require('./routes/leaderboard.routes'));
 app.use('/api/progress', require('./routes/userProgress.routes'));
+app.use('/api/progress', require('./routes/socialProgress.routes'));
 
 // Root route
 app.get('/', (req, res) => {

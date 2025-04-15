@@ -4,6 +4,12 @@ import useSolanaWallet from '../hooks/useWallet';
 import { Link } from 'react-router-dom';
 import ReferralSystem from '../components/ReferralSystem';
 
+const fetchProfile = async () => {
+  const response = await fetch('/api/users/profile', { credentials: 'include' });
+  if (!response.ok) throw new Error('Failed to fetch profile');
+  return await response.json();
+};
+
 const Profile = () => {
   const { connected, publicKey } = useWallet();
   const { formatWalletAddress } = useSolanaWallet();
@@ -12,16 +18,26 @@ const Profile = () => {
   const [activityHistory, setActivityHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchProfile()
+      .then(setProfile)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
   useEffect(() => {
     if (connected) {
       fetchUserData();
     }
   }, [connected]);
-  
+
   const fetchUserData = () => {
     setIsLoading(true);
-    
+
     // Mock data - in a real app, this would be fetched from the backend
     setTimeout(() => {
       setUserStats({
@@ -32,7 +48,7 @@ const Profile = () => {
         rank: 42,
         joinedDate: '2025-01-15'
       });
-      
+
       setUserNFTs([
         {
           id: 'solquest-explorer-1',
@@ -47,7 +63,7 @@ const Profile = () => {
           ]
         }
       ]);
-      
+
       setActivityHistory([
         {
           id: 1,
@@ -109,22 +125,22 @@ const Profile = () => {
           timestamp: '2025-03-31T23:59:59Z'
         }
       ]);
-      
+
       setIsLoading(false);
     }, 1000);
   };
-  
+
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-  
+
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now - date);
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) {
       return 'Today';
     } else if (diffDays === 1) {
@@ -135,24 +151,24 @@ const Profile = () => {
       return formatDate(dateString);
     }
   };
-  
+
   const getActivityIcon = (type) => {
     switch (type) {
       case 'quest_completed':
-        return '🏆';
+        return '';
       case 'nft_purchase':
-        return '🖼️';
+        return '';
       case 'daily_checkin':
-        return '📅';
+        return '';
       case 'quest_subtask':
-        return '✅';
+        return '';
       case 'leaderboard_reward':
-        return '🏅';
+        return '';
       default:
-        return '📝';
+        return '';
     }
   };
-  
+
   if (!connected) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -166,7 +182,7 @@ const Profile = () => {
       </div>
     );
   }
-  
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -175,7 +191,11 @@ const Profile = () => {
       </div>
     );
   }
-  
+
+  if (loading) return <div>Loading profile...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!profile) return <div>No profile data.</div>;
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Profile Header */}
@@ -184,14 +204,14 @@ const Profile = () => {
           <div className="w-20 h-20 bg-solana-purple rounded-full flex items-center justify-center text-white text-2xl font-bold">
             {connected && publicKey ? formatWalletAddress(publicKey.toString()).charAt(0).toUpperCase() : '?'}
           </div>
-          
+
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-white mb-1">{publicKey ? formatWalletAddress(publicKey.toString()) : 'Unknown User'}</h1>
             <p className="text-gray-400">Level {userStats?.level} Explorer • Joined {userStats ? formatDate(userStats.joinedDate) : 'N/A'}</p>
           </div>
         </div>
       </div>
-      
+
       {/* Tabs */}
       <div className="flex border-b border-gray-700 mb-6 overflow-x-auto">
         <button
@@ -218,8 +238,14 @@ const Profile = () => {
         >
           Activity
         </button>
+        <button
+          className={`py-2 px-4 font-medium ${activeTab === 'points' ? 'text-white border-b-2 border-solana-green' : 'text-gray-400 hover:text-white'}`}
+          onClick={() => setActiveTab('points')}
+        >
+          Points
+        </button>
       </div>
-      
+
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-dark-card rounded-xl p-6">
@@ -247,7 +273,7 @@ const Profile = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-dark-card rounded-xl p-6">
             <h2 className="text-xl font-bold text-white mb-4">NFT Boosts</h2>
             {userNFTs.length > 0 ? (
@@ -286,7 +312,7 @@ const Profile = () => {
               </div>
             )}
           </div>
-          
+
           <div className="bg-dark-card rounded-xl p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-white">Recent Activity</h2>
@@ -323,11 +349,11 @@ const Profile = () => {
           </div>
         </div>
       )}
-      
+
       {activeTab === 'nfts' && (
         <div className="bg-dark-card rounded-xl p-6 mb-8">
           <h2 className="text-xl font-bold text-white mb-6">Your NFTs</h2>
-          
+
           {userNFTs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {userNFTs.map((nft) => (
@@ -363,7 +389,6 @@ const Profile = () => {
                   </div>
                 </div>
               ))}
-              
               <div className="bg-gray-800 rounded-xl overflow-hidden border-2 border-dashed border-gray-700 flex flex-col items-center justify-center p-6 h-full">
                 <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mb-4">
                   <span className="text-2xl">➕</span>
@@ -399,15 +424,15 @@ const Profile = () => {
           )}
         </div>
       )}
-      
+
       {activeTab === 'referrals' && (
         <ReferralSystem />
       )}
-      
+
       {activeTab === 'activity' && (
         <div className="bg-dark-card rounded-xl p-6 mb-8">
           <h2 className="text-xl font-bold text-white mb-6">Activity History</h2>
-          
+
           <div className="space-y-4">
             {activityHistory.map((activity) => (
               <div key={activity.id} className="flex p-4 bg-gray-800 rounded-lg">
@@ -445,7 +470,7 @@ const Profile = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {activity.type === 'leaderboard_reward' && (
                     <div className="mt-2 p-2 bg-gray-700 rounded">
                       <p className="text-sm text-gray-300">
@@ -457,6 +482,39 @@ const Profile = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {activeTab === 'points' && (
+        <div className="max-w-2xl mx-auto p-6">
+          <h2 className="text-2xl font-bold mb-4">Points</h2>
+          <div className="mb-4">
+            <div className="text-lg font-semibold">Wallet: <span className="text-gray-400">{profile.walletAddress}</span></div>
+            <div className="text-lg font-semibold">Total Points: <span className="text-solana-green">{profile.points}</span></div>
+          </div>
+          <h3 className="text-xl font-semibold mt-6 mb-2">Points History</h3>
+          {profile.pointsHistory && profile.pointsHistory.length > 0 ? (
+            <table className="w-full text-left border border-gray-700 rounded-lg">
+              <thead>
+                <tr className="bg-gray-800">
+                  <th className="px-3 py-2">Description</th>
+                  <th className="px-3 py-2">Points</th>
+                  <th className="px-3 py-2">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profile.pointsHistory.slice().reverse().map((entry, idx) => (
+                  <tr key={idx} className="border-t border-gray-700">
+                    <td className="px-3 py-2">{entry.description}</td>
+                    <td className="px-3 py-2 text-solana-green">+{entry.points}</td>
+                    <td className="px-3 py-2 text-xs text-gray-400">{new Date(entry.timestamp).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="text-gray-400">No points history yet.</div>
+          )}
         </div>
       )}
     </div>

@@ -52,7 +52,17 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: Date.now
-  }
+  },
+  pointsHistory: [
+    {
+      subtaskId: { type: String },
+      questId: { type: String },
+      type: { type: String }, // e.g. "twitter", "discord", etc.
+      description: { type: String },
+      points: { type: Number },
+      timestamp: { type: Date, default: Date.now }
+    }
+  ]
 }, {
   timestamps: true,
   toJSON: {
