@@ -5,8 +5,21 @@
 import axios from 'axios';
 
 // API Configuration
-const PRIMARY_API_URL = import.meta.env.VITE_API_URL || 'https://api.solquest.io';
-const FALLBACK_API_URL = 'https://solquest-dfseffz2e-mystartup-team.vercel.app'; // Updated Vercel deployment URL as fallback
+const IS_DEV = import.meta.env.DEV || process.env.NODE_ENV === 'development';
+
+// Development vs Production URLs
+const DEV_API_URL = 'http://localhost:5000';
+const PROD_PRIMARY_API_URL = 'https://solquest.io'; // Main domain with API routes
+const PROD_FALLBACK_API_URL = 'https://solquest-app-new.vercel.app'; // Vercel deployment URL as fallback
+
+// Use environment variables if available, otherwise use defaults
+const PRIMARY_API_URL = IS_DEV
+  ? (import.meta.env.VITE_DEV_API_URL || DEV_API_URL)
+  : (import.meta.env.VITE_API_URL || PROD_PRIMARY_API_URL);
+
+const FALLBACK_API_URL = IS_DEV
+  ? DEV_API_URL
+  : PROD_FALLBACK_API_URL;
 
 // Function to check if the primary API is accessible
 const checkApiConnection = async (url) => {

@@ -20,10 +20,51 @@ function QuestsPage() {
   const [error, setError] = useState(null);
   const [syncStatus, setSyncStatus] = useState('synced'); // 'synced', 'local-only', 'syncing'
   
+  // Check API health status
+  const checkApiHealth = async () => {
+    try {
+      // Try to fetch the health status from the API
+      const response = await fetch('/api/health');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('API health status:', data);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('API health check failed:', err);
+      return false;
+    }
+  };
+
   // Fetch user's quest progress on mount and when wallet/auth changes
   useEffect(() => {
     if (connected && publicKey) {
-      fetchUserProgress();
+      // First check API health, then fetch user progress
+      checkApiHealth().then(isHealthy => {
+        if (isHealthy) {
+          fetchUserProgress();
+        } else {
+          // If API is not healthy, set error message and use local storage
+          setError('Unable to connect to SolQuest servers. Your progress will be saved locally until connection is restored.');
+          setSyncStatus('local-only');
+          
+          // Try to load from local storage
+          const localProgress = localStorage.getItem('solquest_progress');
+          if (localProgress) {
+            try {
+              const parsedProgress = JSON.parse(localProgress);
+              setSocialStarted(parsedProgress.twitterQuestStarted || false);
+              setSocialCompleted(parsedProgress.twitterQuestCompleted || false);
+              setNftStarted(parsedProgress.nftQuestStarted || false);
+              setNftCompleted(parsedProgress.nftQuestCompleted || false);
+              setRewardsClaimed(parsedProgress.rewardsClaimed || false);
+            } catch (localErr) {
+              console.error('Error parsing local progress:', localErr);
+            }
+          }
+        }
+      });
     }
   }, [connected, publicKey, isAuthenticated]);
   
