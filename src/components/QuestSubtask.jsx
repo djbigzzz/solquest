@@ -132,8 +132,20 @@ const QuestSubtask = ({ subtask, onStart, onComplete }) => {
             {!isStarted ? (
               <button
                 onClick={() => {
-                  console.log('[DEBUG] Start button clicked', { enabled: !(!connected || isLoading), connected, isLoading });
-                  handleStart();
+                  console.log('[DEBUG] Start button clicked', { enabled: !(!connected || isLoading), connected, isLoading, type, socialLink, socialUrl });
+                  
+                  // DIRECT IMPLEMENTATION: Skip the handleStart function and directly open URL
+                  if (connected) {
+                    const urlToOpen = socialUrl || socialLink || 'https://x.com/SolQuestio';
+                    console.log('[DEBUG] Directly opening URL:', urlToOpen);
+                    window.open(urlToOpen, '_blank', 'noopener');
+                    setCooldown(10);
+                    setIsStarted(true);
+                    setCanValidate(false);
+                    if (onStart) onStart(id);
+                  } else {
+                    alert('Please connect your wallet to start this subtask');
+                  }
                 }}
                 className="bg-solana-green hover:bg-opacity-80 text-white text-sm px-3 py-1 rounded-full transition-colors"
                 disabled={!connected || isLoading}
