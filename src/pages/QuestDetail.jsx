@@ -64,9 +64,21 @@ const QuestDetail = () => {
             }
             return subtask;
           });
-          setQuest(questData);
+          // Patch quest title and description for X (formerly Twitter)
+          let patchedQuest = { ...questData };
+          if (
+            patchedQuest.title &&
+            (patchedQuest.title.toLowerCase().includes('twitter') || patchedQuest.title.toLowerCase().includes('x '))
+          ) {
+            patchedQuest.title = patchedQuest.title.replace(/Twitter/gi, 'X');
+            if (patchedQuest.description) {
+              patchedQuest.description = patchedQuest.description.replace(/Twitter/gi, 'X (formerly Twitter)');
+            }
+          }
+          setQuest(patchedQuest);
           setSubtasks(patchedSubtasks);
           setApiStatus({ connected: true, message: 'Connected to SolQuest API' });
+          console.log('[DEBUG] Quest:', patchedQuest);
           console.log('[DEBUG] Subtasks:', patchedSubtasks);
         } else {
           setApiStatus({ 
