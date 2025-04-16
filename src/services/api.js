@@ -4,54 +4,59 @@
  */
 import axios from 'axios';
 
-// Set API base URL from environment variable or use default
-// Use Vite's import.meta.env for environment variables
-const IS_DEV = import.meta.env.DEV;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://solquest.io';
+// Standardized API configuration
+const API_BASE_URL = 'https://solquest.io/api';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest'
   },
-  timeout: 10000, // 10 seconds
-  withCredentials: true // Important for handling authentication cookies
+  timeout: 15000,
+  withCredentials: true
 });
 
-// Request interceptor for adding auth token
+// Enhanced request interceptor
 axiosInstance.interceptors.request.use(
-  (config) => {
-    // Add auth token if available
+  config => {
+    console.log('[API] Request:', config.method.toUpperCase(), config.url);
     const token = localStorage.getItem('solquest_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('[API] Auth token attached');
     }
     return config;
   },
-  (error) => {
+  error => {
+    console.error('[API] Request setup error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for handling common errors
+// Enhanced response interceptor
 axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  response => {
+    console.log('[API] Response:', response.status, response.config.url);
+    return response;
+  },
+  error => {
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('API Error Response:', {
+      console.error('[API] Error Response:', {
         status: error.response.status,
-        data: error.response.data,
+        url: error.response.config.url,
+        data: error.response.data
       });
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('API Request Error (No Response):', error.request);
     } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('API Setup Error:', error.message);
+      console.error('[API] Network Error:', error.message);
+    }
+    
+    // Handle specific error cases
+    if (error.response?.status === 401) {
+      localStorage.removeItem('solquest_token');
+      window.location.reload(); // Force auth reset
     }
     
     return Promise.reject(error);
@@ -59,16 +64,16 @@ axiosInstance.interceptors.response.use(
 );
 
 // API endpoints
-export const checkHealth = () => axiosInstance.get('/api/health');
-export const checkDbConnection = () => axiosInstance.get('/api/db-connect');
-export const getQuests = () => axiosInstance.get('/api/quests');
-export const getUsers = () => axiosInstance.get('/api/users');
+export const checkHealth = () => axiosInstance.get('/health');
+export const checkDbConnection = () => axiosInstance.get('/db-connect');
+export const getQuests = () => axiosInstance.get('/quests');
+export const getUsers = () => axiosInstance.get('/users');
 
 // Auth API
 export const authAPI = {
   login: async (walletAddress, signature) => {
     try {
-      const response = await api.post('/api/auth/login', { walletAddress, signature });
+      const response = await axiosInstance.post('/auth/login', { walletAddress, signature });
       if (response.data.token) {
         localStorage.setItem('solquest_token', response.data.token);
       }
@@ -81,7 +86,7 @@ export const authAPI = {
   
   logout: async () => {
     try {
-      await api.post('/api/auth/logout');
+      await axiosInstance.post('/auth/logout');
       localStorage.removeItem('solquest_token');
     } catch (error) {
       console.error('Logout error:', error);
@@ -93,7 +98,7 @@ export const authAPI = {
   
   getAuthStatus: async () => {
     try {
-      const response = await api.get('/api/auth/status');
+      const response = await axiosInstance.get('/auth/status');
       return response.data;
     } catch (error) {
       console.error('Auth status error:', error);
@@ -106,7 +111,7 @@ export const authAPI = {
 export const questsAPI = {
   getAllQuests: async () => {
     try {
-      const response = await api.get('/api/quests');
+      const response = await axiosInstance.get('/quests');
       return response.data;
     } catch (error) {
       console.error('Get quests error:', error);
@@ -116,7 +121,7 @@ export const questsAPI = {
   
   getQuestById: async (questId) => {
     try {
-      const response = await api.get(`/api/quests/${questId}`);
+      const response = await axiosInstance.get(`/quests/${questId}`);
       return response.data;
     } catch (error) {
       console.error(`Get quest ${questId} error:`, error);
@@ -126,7 +131,7 @@ export const questsAPI = {
   
   startQuest: async (questId) => {
     try {
-      const response = await api.post(`/api/quests/${questId}/start`);
+      const response = await axiosInstance.post(`/quests/${questId}/start`);
       return response.data;
     } catch (error) {
       console.error(`Start quest ${questId} error:`, error);
@@ -136,7 +141,7 @@ export const questsAPI = {
   
   completeQuestStep: async (questId, stepId, proofData) => {
     try {
-      const response = await apiClient.post(`/api/quests/${questId}/steps/${stepId}/complete`, { proofData });
+      const response = await axiosInstance.post(`/quests/${questId}/steps/${stepId}/complete`, { proofData });
       return response.data;
     } catch (error) {
       console.error(`Complete quest step error:`, error);
@@ -149,7 +154,7 @@ export const questsAPI = {
 export const userAPI = {
   getUserProfile: async () => {
     try {
-      const response = await apiClient.get('/api/users/profile');
+      const response = await axiosInstance.get('/users/profile');
       return response.data;
     } catch (error) {
       console.error('Get user profile error:', error);
@@ -159,7 +164,7 @@ export const userAPI = {
   
   updateUserProfile: async (profileData) => {
     try {
-      const response = await apiClient.put('/api/users/profile', profileData);
+      const response = await axiosInstance.put('/users/profile', profileData);
       return response.data;
     } catch (error) {
       console.error('Update profile error:', error);
@@ -169,7 +174,7 @@ export const userAPI = {
   
   getUserQuestProgress: async () => {
     try {
-      const response = await apiClient.get('/api/users/quests');
+      const response = await axiosInstance.get('/users/quests');
       return response.data;
     } catch (error) {
       console.error('Get user quests error:', error);
@@ -182,7 +187,7 @@ export const userAPI = {
 export const leaderboardAPI = {
   getLeaderboard: async (limit = 10, page = 1) => {
     try {
-      const response = await apiClient.get('/api/leaderboard', { params: { limit, page } });
+      const response = await axiosInstance.get('/leaderboard', { params: { limit, page } });
       return response.data;
     } catch (error) {
       console.error('Get leaderboard error:', error);
@@ -195,7 +200,7 @@ export const leaderboardAPI = {
 export const referralAPI = {
   getReferralCode: async () => {
     try {
-      const response = await apiClient.get('/api/referrals/code');
+      const response = await axiosInstance.get('/referrals/code');
       return response.data;
     } catch (error) {
       console.error('Get referral code error:', error);
@@ -205,7 +210,7 @@ export const referralAPI = {
   
   getReferralStats: async () => {
     try {
-      const response = await apiClient.get('/api/referrals/stats');
+      const response = await axiosInstance.get('/referrals/stats');
       return response.data;
     } catch (error) {
       console.error('Get referral stats error:', error);
@@ -215,7 +220,7 @@ export const referralAPI = {
   
   applyReferralCode: async (referralCode) => {
     try {
-      const response = await apiClient.post('/api/referrals/apply', { referralCode });
+      const response = await axiosInstance.post('/referrals/apply', { referralCode });
       return response.data;
     } catch (error) {
       console.error('Apply referral code error:', error);
@@ -228,7 +233,7 @@ export const referralAPI = {
 export const progressAPI = {
   getUserProgress: async () => {
     try {
-      const response = await apiClient.get('/api/progress');
+      const response = await axiosInstance.get('/progress');
       return response.data;
     } catch (error) {
       console.error('Get user progress error:', error);
@@ -238,7 +243,7 @@ export const progressAPI = {
   
   updateTwitterQuest: async (progressData) => {
     try {
-      const response = await apiClient.post('/api/progress/twitter', progressData);
+      const response = await axiosInstance.post('/progress/twitter', progressData);
       return response.data;
     } catch (error) {
       console.error('Update Twitter quest progress error:', error);
@@ -248,7 +253,7 @@ export const progressAPI = {
   
   updateNFTQuest: async (progressData) => {
     try {
-      const response = await apiClient.post('/api/progress/nft', progressData);
+      const response = await axiosInstance.post('/progress/nft', progressData);
       return response.data;
     } catch (error) {
       console.error('Update NFT quest progress error:', error);
@@ -258,7 +263,7 @@ export const progressAPI = {
   
   claimQuestRewards: async (questData) => {
     try {
-      const response = await apiClient.post('/api/progress/claim-rewards', questData);
+      const response = await axiosInstance.post('/progress/claim-rewards', questData);
       return response.data;
     } catch (error) {
       console.error('Claim quest rewards error:', error);
