@@ -7,7 +7,6 @@ const connectDB = require('../config/database');
  * Get all quests
  * @route GET /api/quests
  */
-const connectDB = require('../config/database');
 
 const getAllQuests = async (req, res) => {
   try {
