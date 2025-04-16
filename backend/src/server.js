@@ -62,6 +62,7 @@ app.use((req, res, next) => {
 });
 
 // Health check route - must be defined before other routes
+// Redeploy trigger comment
 app.get('/api/health', async (req, res) => {
   let dbStatus = 'disconnected';
   let dbDetails = null;
