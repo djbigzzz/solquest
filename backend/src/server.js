@@ -62,26 +62,35 @@ app.use((req, res, next) => {
 });
 
 // Health check route - must be defined before other routes
-app.get('/api/health', (req, res) => {
-  // Check MongoDB connection status
+app.get('/api/health', async (req, res) => {
   let dbStatus = 'disconnected';
   let dbDetails = null;
-  
-  // Only check MongoDB if we're not using memory DB
-  if (process.env.USE_MEMORY_DB !== 'true' && mongoose.connection) {
-    dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'connecting';
-    
-    if (dbStatus === 'connected') {
-      dbDetails = {
-        host: mongoose.connection.host,
-        name: mongoose.connection.name,
-      };
+  let canQuery = false;
+  let queryError = null;
+  let testDoc = null;
+
+  try {
+    if (process.env.USE_MEMORY_DB !== 'true' && mongoose.connection) {
+      dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'connecting';
+      if (dbStatus === 'connected') {
+        dbDetails = {
+          host: mongoose.connection.host,
+          name: mongoose.connection.name,
+        };
+        // TEST: Actually run a query
+        const UserProgress = require('./models/userProgress.model');
+        testDoc = await UserProgress.findOne();
+        canQuery = true;
+      }
+    } else if (process.env.USE_MEMORY_DB === 'true') {
+      dbStatus = 'memory-db';
+      canQuery = true;
     }
-  } else if (process.env.USE_MEMORY_DB === 'true') {
-    dbStatus = 'memory-db';
+  } catch (err) {
+    queryError = err.message || err;
+    canQuery = false;
   }
-  
-  // Return health status
+
   res.status(200).json({
     status: 'ok',
     message: 'SolQuest API is healthy',
@@ -90,6 +99,9 @@ app.get('/api/health', (req, res) => {
     database: {
       status: dbStatus,
       details: dbDetails,
+      canQuery,
+      queryError,
+      testDoc: testDoc ? { _id: testDoc._id, walletAddress: testDoc.walletAddress } : null
     },
     uptime: Math.floor(process.uptime()) + ' seconds'
   });
