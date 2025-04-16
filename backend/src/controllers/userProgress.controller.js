@@ -135,8 +135,14 @@ const debugAuth = async (req, res) => {
 // Claim rewards endpoint
 const claimQuestRewards = async (req, res) => {
   try {
+    console.log('[claimQuestRewards] req.user:', req.user);
+    if (!req.user || !req.user.walletAddress) {
+      console.error('[claimQuestRewards] Missing req.user or walletAddress');
+      return res.status(401).json({ error: true, message: 'Unauthorized: No user/walletAddress' });
+    }
     const { walletAddress } = req.user;
     let userProgress = await UserProgress.findOne({ walletAddress });
+    console.log('[claimQuestRewards] userProgress:', userProgress);
     if (!userProgress) {
       return res.status(404).json({ error: true, message: 'User progress not found' });
     }
@@ -149,7 +155,7 @@ const claimQuestRewards = async (req, res) => {
     await userProgress.save();
     res.json({ message: 'Rewards claimed!', totalPoints: userProgress.totalPoints });
   } catch (error) {
-    console.error('Claim rewards error:', error);
+    console.error('[claimQuestRewards] ERROR:', error.stack || error);
     res.status(500).json({ error: true, message: 'Server error' });
   }
 };
