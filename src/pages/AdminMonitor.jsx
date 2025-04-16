@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { checkHealth, checkDbConnection, getQuests, getUsers } from '../services/api';
 
 const REFRESH_INTERVAL = 30000; // 30 seconds
 const BRAND_ACCENT = '#7B5FFF';
@@ -52,10 +52,10 @@ function AdminMonitor() {
     setApiError(null);
     try {
       const [health, db, quests, users] = await Promise.all([
-        axios.get('/api/health'),
-        axios.get('/api/db-connect'),
-        axios.get('/api/quests'),
-        axios.get('/api/users'),
+        checkHealth(),
+        checkDbConnection(),
+        getQuests(),
+        getUsers(),
       ]);
       
       // Validate API responses

@@ -4,160 +4,71 @@
  */
 import axios from 'axios';
 
-// Set API base URL from environment variable
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
-
-const PROD_FALLBACK_API_URL = 'https://solquest-app-new.vercel.app'; // Vercel deployment URL as fallback
-
-// Use environment variables if available, otherwise use defaults
-const PRIMARY_API_URL = IS_DEV
-  ? (import.meta.env.VITE_DEV_API_URL || DEV_API_URL)
-  : (import.meta.env.VITE_API_URL || PROD_PRIMARY_API_URL);
-
-const FALLBACK_API_URL = IS_DEV
-  ? DEV_API_URL
-  : PROD_FALLBACK_API_URL;
-
-// Function to check if the primary API is accessible
-const checkApiConnection = async (url) => {
-  try {
-    console.log(`Checking API connection to ${url}/api/health`);
-    const response = await fetch(`${url}/api/health`, { 
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-      // Add a cache-busting parameter to avoid cached responses
-      cache: 'no-cache'
-    });
-    
-    if (response.ok) {
-      // Parse the response to check database connection status
-      const data = await response.json();
-      console.log('API health check response:', data);
-      
-      // Only consider the API accessible if the database is connected
-      if (data.database && data.database.status === 'connected') {
-        console.log('Database connection verified');
-        return true;
-      } else {
-        console.warn('API is accessible but database is not connected');
-        return false;
-      }
-    }
-    
-    console.warn(`API health check failed with status: ${response.status}`);
-    return false;
-  } catch (error) {
-    console.warn(`API connection check failed for ${url}:`, error.message);
-    return false;
-  }
-};
-
-// Determine which API URL to use (will be set after initialization)
-let API_URL = PRIMARY_API_URL;
-let isApiInitialized = false;
-let initializationPromise = null;
-
-// Function to initialize API connection
-const initializeApiConnection = async () => {
-  if (isApiInitialized) {
-    return API_URL;
-  }
-  
-  if (initializationPromise) {
-    return initializationPromise;
-  }
-  
-  console.log('Initializing API connection...');
-  initializationPromise = (async () => {
-    // First try the primary URL
-    console.log(`Trying primary API at ${PRIMARY_API_URL}`);
-    const isPrimaryAccessible = await checkApiConnection(PRIMARY_API_URL);
-    
-    if (isPrimaryAccessible) {
-      console.log(`✅ Successfully connected to primary API at ${PRIMARY_API_URL}`);
-      API_URL = PRIMARY_API_URL;
-    } else {
-      // If primary fails, try the fallback URL
-      console.log(`Primary API failed, trying fallback URL: ${FALLBACK_API_URL}`);
-      const isFallbackAccessible = await checkApiConnection(FALLBACK_API_URL);
-      
-      if (isFallbackAccessible) {
-        console.log(`✅ Successfully connected to fallback API at ${FALLBACK_API_URL}`);
-        API_URL = FALLBACK_API_URL;
-      } else {
-        console.error('❌ All API endpoints are inaccessible. Using primary URL as default.');
-        API_URL = PRIMARY_API_URL;
-      }
-    }
-    
-    isApiInitialized = true;
-    initializationPromise = null;
-    return API_URL;
-  })();
-  
-  return initializationPromise;
-};
-
-// Initialize API connection immediately
-initializeApiConnection().then(url => {
-  console.log(`API initialized with URL: ${url}`);
-}).catch(err => {
-  console.error('API initialization error:', err);
-});
+// Set API base URL from environment variable or use default
+// Use Vite's import.meta.env for environment variables
+const IS_DEV = import.meta.env.DEV;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://solquest.io';
 
 // Create axios instance with default config
-const apiClient = axios.create({
-  // baseURL will be updated after the connection check
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
-  withCredentials: true, // Important for handling authentication cookies
+  timeout: 10000, // 10 seconds
+  withCredentials: true // Important for handling authentication cookies
 });
 
-// Request interceptor for adding auth token and updating baseURL
-apiClient.interceptors.request.use(
-  async (config) => {
-    // Wait for API initialization to complete before proceeding
-    try {
-      // This ensures we have the correct API_URL before making the request
-      await initializeApiConnection();
-      
-      // Update the baseURL before each request to ensure we're using the correct one
-      config.baseURL = API_URL;
-      console.log(`Making request to: ${config.baseURL}${config.url}`);
-      
-      const token = localStorage.getItem('solquest_token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    } catch (error) {
-      console.error('Error in request interceptor:', error);
-      return Promise.reject(error);
+// Request interceptor for adding auth token
+axiosInstance.interceptors.request.use(
+  (config) => {
+    // Add auth token if available
+    const token = localStorage.getItem('solquest_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
   },
-  (error) => Promise.reject(error)
-);
-
-// Response interceptor for handling errors
-apiClient.interceptors.response.use(
-  (response) => response,
   (error) => {
-    // Handle 401 Unauthorized errors (token expired, etc.)
-    if (error.response && error.response.status === 401) {
-      // Clear local storage and redirect to login if needed
-      localStorage.removeItem('solquest_token');
-      // You might want to redirect to login or trigger a refresh token flow here
-    }
     return Promise.reject(error);
   }
 );
+
+// Response interceptor for handling common errors
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('API Error Response:', {
+        status: error.response.status,
+        data: error.response.data,
+      });
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('API Request Error (No Response):', error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('API Setup Error:', error.message);
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+// API endpoints
+export const checkHealth = () => axiosInstance.get('/api/health');
+export const checkDbConnection = () => axiosInstance.get('/api/db-connect');
+export const getQuests = () => axiosInstance.get('/api/quests');
+export const getUsers = () => axiosInstance.get('/api/users');
 
 // Auth API
 export const authAPI = {
   login: async (walletAddress, signature) => {
     try {
-      const response = await apiClient.post('/api/auth/login', { walletAddress, signature });
+      const response = await api.post('/api/auth/login', { walletAddress, signature });
       if (response.data.token) {
         localStorage.setItem('solquest_token', response.data.token);
       }
@@ -170,7 +81,7 @@ export const authAPI = {
   
   logout: async () => {
     try {
-      await apiClient.post('/api/auth/logout');
+      await api.post('/api/auth/logout');
       localStorage.removeItem('solquest_token');
     } catch (error) {
       console.error('Logout error:', error);
@@ -182,7 +93,7 @@ export const authAPI = {
   
   getAuthStatus: async () => {
     try {
-      const response = await apiClient.get('/api/auth/status');
+      const response = await api.get('/api/auth/status');
       return response.data;
     } catch (error) {
       console.error('Auth status error:', error);
@@ -195,7 +106,7 @@ export const authAPI = {
 export const questsAPI = {
   getAllQuests: async () => {
     try {
-      const response = await apiClient.get('/api/quests');
+      const response = await api.get('/api/quests');
       return response.data;
     } catch (error) {
       console.error('Get quests error:', error);
@@ -205,7 +116,7 @@ export const questsAPI = {
   
   getQuestById: async (questId) => {
     try {
-      const response = await apiClient.get(`/api/quests/${questId}`);
+      const response = await api.get(`/api/quests/${questId}`);
       return response.data;
     } catch (error) {
       console.error(`Get quest ${questId} error:`, error);
@@ -215,7 +126,7 @@ export const questsAPI = {
   
   startQuest: async (questId) => {
     try {
-      const response = await apiClient.post(`/api/quests/${questId}/start`);
+      const response = await api.post(`/api/quests/${questId}/start`);
       return response.data;
     } catch (error) {
       console.error(`Start quest ${questId} error:`, error);
