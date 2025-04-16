@@ -34,22 +34,17 @@ if (process.env.FRONTEND_URL) {
   allowedOrigins.push(process.env.FRONTEND_URL);
 }
 
+// Enhanced CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, etc)
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // In development, allow all origins
-    if (process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    }
-    
-    // In production, check against allowed origins
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
     } else {
-      console.warn(`CORS blocked request from origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      console.log('[CORS] Blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'))
     }
   },
   credentials: true,
@@ -59,6 +54,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json()); // Parse JSON bodies
 app.use(morgan('dev')); // HTTP request logger
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`[REQ] ${new Date().toISOString()} ${req.ip} ${req.method} ${req.path}`);
+  next();
+});
 
 // Health check route - must be defined before other routes
 app.get('/api/health', (req, res) => {
@@ -102,6 +103,7 @@ app.use('/api/referrals', require('./routes/referral.routes'));
 app.use('/api/leaderboard', require('./routes/leaderboard.routes'));
 app.use('/api/progress', require('./routes/userProgress.routes'));
 app.use('/api/progress', require('./routes/socialProgress.routes'));
+app.use('/api/admin', require('./routes/admin.routes'));
 
 // Root route
 app.get('/', (req, res) => {

@@ -12,4 +12,7 @@ router.post('/twitter', protect, userProgressController.updateTwitterQuest);
 // POST /api/progress/nft - Update NFT quest progress
 router.post('/nft', protect, userProgressController.updateNFTQuest);
 
+// POST /api/progress/claim-rewards
+router.post('/claim-rewards', protect, userProgressController.claimQuestRewards);
+
 module.exports = router;

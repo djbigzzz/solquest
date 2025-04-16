@@ -109,8 +109,56 @@ const updateNFTQuest = async (req, res) => {
   }
 };
 
+// Debug endpoint - Test DB connection
+const debugDB = async (req, res) => {
+  try {
+    await connectDB();
+    res.json({ status: 'OK', dbConnected: true });
+  } catch (error) {
+    res.status(500).json({ 
+      error: true,
+      dbConnected: false,
+      message: error.message 
+    });
+  }
+};
+
+// Debug endpoint - Test auth middleware
+const debugAuth = async (req, res) => {
+  res.json({
+    authWorking: true,
+    user: req.user || null,
+    headers: req.headers 
+  });
+};
+
+// Claim rewards endpoint
+const claimQuestRewards = async (req, res) => {
+  try {
+    const { walletAddress } = req.user;
+    let userProgress = await UserProgress.findOne({ walletAddress });
+    if (!userProgress) {
+      return res.status(404).json({ error: true, message: 'User progress not found' });
+    }
+    if (userProgress.rewardsClaimed) {
+      return res.status(400).json({ error: true, message: 'Rewards already claimed' });
+    }
+    userProgress.rewardsClaimed = true;
+    userProgress.totalPoints += 150; // Example reward points
+    userProgress.lastUpdated = Date.now();
+    await userProgress.save();
+    res.json({ message: 'Rewards claimed!', totalPoints: userProgress.totalPoints });
+  } catch (error) {
+    console.error('Claim rewards error:', error);
+    res.status(500).json({ error: true, message: 'Server error' });
+  }
+};
+
 module.exports = {
   getUserProgress,
   updateTwitterQuest,
-  updateNFTQuest
+  updateNFTQuest,
+  debugDB,
+  debugAuth,
+  claimQuestRewards
 };
