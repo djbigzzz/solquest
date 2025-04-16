@@ -7,23 +7,27 @@ const UserProgress = require('../models/userProgress.model');
  */
 const getUserProgress = async (req, res) => {
   try {
-    console.log('[PROGRESS] Request user:', req.user.walletAddress);
-    
-    let userProgress = await UserProgress.findOne({ walletAddress: req.user.walletAddress });
-    
-    if (!userProgress) {
-      console.log('[PROGRESS] Creating new progress for:', req.user.walletAddress);
-      userProgress = await UserProgress.create({
-        walletAddress: req.user.walletAddress,
-        totalPoints: 0
-      });
+    console.log('[DEBUG] getUserProgress endpoint HIT');
+    console.log('[getUserProgress] req.user:', req.user);
+    if (!req.user || !req.user.walletAddress) {
+      console.error('[getUserProgress] Missing req.user or walletAddress');
+      return res.status(401).json({ error: true, message: 'Unauthorized: No user/walletAddress', debug: { user: req.user, env: process.env.NODE_ENV } });
     }
-    
-    console.log('[PROGRESS] Returning progress for:', req.user.walletAddress);
+    const { walletAddress } = req.user;
+    let userProgress = await UserProgress.findOne({ walletAddress });
+    console.log('[getUserProgress] userProgress:', userProgress);
+    if (!userProgress) {
+      userProgress = await UserProgress.create({ walletAddress, totalPoints: 0 });
+      console.log('[getUserProgress] Created new userProgress:', userProgress);
+    }
     res.json(userProgress);
   } catch (error) {
-    console.error('[PROGRESS] Error:', error);
-    res.status(500).json({ error: true, message: 'Server error' });
+    console.error('[getUserProgress] ERROR:', error.stack || error);
+    res.status(500).json({ error: true, message: 'Server error', debug: {
+      user: req.user,
+      env: process.env.NODE_ENV,
+      error: error.stack || error
+    }});
   }
 };
 
