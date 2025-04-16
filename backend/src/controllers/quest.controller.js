@@ -11,10 +11,14 @@ const connectDB = require('../config/database');
 
 const getAllQuests = async (req, res) => {
   try {
+    console.log("[getAllQuests] Connecting to MongoDB...");
     await connectDB();
+    console.log("[getAllQuests] Connected to MongoDB. Fetching quests...");
     const quests = await Quest.find({ active: true });
+    console.log(`[getAllQuests] Quests fetched: ${quests.length}`);
     res.json(quests);
   } catch (error) {
+    console.error("[getAllQuests] Error:", error);
     res.status(500).json({
       error: true,
       message: error.message
