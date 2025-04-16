@@ -5,48 +5,37 @@ const User = require('../models/user.model');
  * Middleware to protect routes that require authentication
  */
 const protect = async (req, res, next) => {
-  let token;
-
-  // Check if token exists in headers
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
-
-      // Verify token
-      const decoded = verifyToken(token);
-
-      // Find user by id and exclude password
-      const user = await User.findById(decoded.id).select('-password');
-
-      if (!user) {
-        return res.status(401).json({
-          error: true,
-          message: 'User not found'
-        });
-      }
-
-      // Update last login time
-      user.lastLogin = Date.now();
-      await user.save();
-
-      // Set user in request object
-      req.user = user;
-      next();
-    } catch (error) {
-      console.error('Auth middleware error:', error);
-      return res.status(401).json({
-        error: true,
-        message: 'Not authorized, token failed'
-      });
-    }
+  // FOR TESTING ONLY: Create test user if no token
+  if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer')) {
+    console.log('⚠️ [AUTH] No token - using test account');
+    req.user = {
+      _id: '000000000000000000000000',
+      walletAddress: 'TEST_WALLET_' + Math.random().toString(36).substring(2, 8),
+      points: 0,
+      isAdmin: false
+    };
+    return next();
   }
 
-  if (!token) {
-    return res.status(401).json({
-      error: true,
-      message: 'Not authorized, no token'
-    });
+  // Original auth logic
+  let token = req.headers.authorization.split(' ')[1];
+  try {
+    const decoded = verifyToken(token);
+    const user = await User.findById(decoded.id).select('-password');
+
+    if (!user) {
+      console.log('[AUTH] User not found for token');
+      return res.status(401).json({ error: true, message: 'User not found' });
+    }
+
+    user.lastLogin = Date.now();
+    await user.save();
+    req.user = user;
+    console.log(`[AUTH] Authenticated user: ${user.walletAddress}`);
+    next();
+  } catch (error) {
+    console.error('[AUTH] Error:', error.message);
+    return res.status(401).json({ error: true, message: 'Not authorized' });
   }
 };
 

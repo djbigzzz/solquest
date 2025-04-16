@@ -7,26 +7,23 @@ const UserProgress = require('../models/userProgress.model');
  */
 const getUserProgress = async (req, res) => {
   try {
-    const { walletAddress } = req.user;
+    console.log('[PROGRESS] Request user:', req.user.walletAddress);
     
-    // Find or create user progress
-    let userProgress = await UserProgress.findOne({ walletAddress });
+    let userProgress = await UserProgress.findOne({ walletAddress: req.user.walletAddress });
     
     if (!userProgress) {
-      // Create new progress record if none exists
+      console.log('[PROGRESS] Creating new progress for:', req.user.walletAddress);
       userProgress = await UserProgress.create({
-        walletAddress,
+        walletAddress: req.user.walletAddress,
         totalPoints: 0
       });
     }
     
+    console.log('[PROGRESS] Returning progress for:', req.user.walletAddress);
     res.json(userProgress);
   } catch (error) {
-    console.error('Get user progress error:', error);
-    res.status(500).json({
-      error: true,
-      message: 'Server error'
-    });
+    console.error('[PROGRESS] Error:', error);
+    res.status(500).json({ error: true, message: 'Server error' });
   }
 };
 
