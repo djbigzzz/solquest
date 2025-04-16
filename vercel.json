@@ -12,6 +12,7 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "MONGODB_URI_PROD": "mongodb+srv://solquest-admin:PU49hcZfaCuZnboa@cluster0.ou2xdtu.mongodb.net/solquest?retryWrites=true&w=majority&appName=Cluster0"
+    "MONGODB_URI_PROD": "mongodb+srv://solquest-admin:PU49hcZfaCuZnboa@cluster0.ou2xdtu.mongodb.net/solquest?retryWrites=true&w=majority&appName=Cluster0",
+    "MONGODB_URI": "mongodb+srv://solquest-admin:PU49hcZfaCuZnboa@cluster0.ou2xdtu.mongodb.net/solquest?retryWrites=true&w=majority&appName=Cluster0"
   }
 }
