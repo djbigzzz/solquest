@@ -40,8 +40,13 @@ export const useAuth = () => {
 
   // Login with wallet
   const login = useCallback(async () => {
-    if (!connected || !publicKey || !signMessage) {
+    if (!connected || !publicKey) {
       setError('Wallet not connected');
+      return false;
+    }
+    if (!signMessage) {
+      setError('Your wallet does not support message signing. Please use Phantom or Solflare browser extension.');
+      console.error('signMessage is undefined. Wallet may not support message signing.');
       return false;
     }
 
@@ -60,6 +65,7 @@ export const useAuth = () => {
 
       // 2. Ask wallet to sign the backend-provided message
       const encodedMessage = new TextEncoder().encode(message);
+      console.log('About to call signMessage. signMessage:', signMessage, 'encodedMessage:', message);
       const signatureBytes = await signMessage(encodedMessage);
       const signature = bs58.encode(signatureBytes);
 
