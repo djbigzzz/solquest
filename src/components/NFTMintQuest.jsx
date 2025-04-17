@@ -284,7 +284,7 @@ function NFTMintQuest() {
                     Processing...
                   </span>
                 ) : (
-                  <span>Mint NFT</span>
+                  <span>Start Quest</span>
                 )}
               </button>
             )}

@@ -5,7 +5,10 @@
 import axios from 'axios';
 
 // Standardized API configuration
-const API_BASE_URL = 'https://api.solquest.io/api';
+// Use environment variable for API base URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/api`
+  : 'https://api.solquest.io/api'; // fallback for safety
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
