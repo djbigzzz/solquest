@@ -133,7 +133,7 @@ const questSchema = new mongoose.Schema({
 });
 
 // Create indexes for efficient querying
-questSchema.index({ slug: 1 });
+// questSchema.index({ slug: 1 }); // Removed to avoid duplicate index warning
 questSchema.index({ category: 1 });
 questSchema.index({ isActive: 1, startDate: -1 });
 questSchema.index({ isPromoted: 1 });

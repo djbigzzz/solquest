@@ -21,7 +21,12 @@ app.use(helmet({
 })); 
 
 // CORS configuration
-const allowedOrigins = [
+// Helper to normalize origins (lowercase, remove trailing slashes)
+function normalizeOrigin(origin) {
+  return origin ? origin.toLowerCase().replace(/\/$/, '') : origin;
+}
+
+let allowedOrigins = [
   'https://solquest.io',
   'https://www.solquest.io',
   'https://solquest-app-new.vercel.app',
@@ -31,16 +36,24 @@ const allowedOrigins = [
 
 // Add any environment-specific frontend URLs
 if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
+  // Remove markdown formatting if present (defensive)
+  const cleanFrontendUrl = process.env.FRONTEND_URL.replace(/\[.*?\]\((.*?)\)/, '$1').trim();
+  if (!allowedOrigins.includes(cleanFrontendUrl)) {
+    allowedOrigins.push(cleanFrontendUrl);
+  }
 }
+
+// Normalize all allowed origins
+allowedOrigins = allowedOrigins.map(normalizeOrigin);
+console.log('[CORS] Allowed origins:', allowedOrigins);
 
 // Enhanced CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
+    const normOrigin = normalizeOrigin(origin);
+    if (allowedOrigins.includes(normOrigin)) {
       callback(null, true)
     } else {
       console.log('[CORS] Blocked origin:', origin);
@@ -151,7 +164,9 @@ const PORT = process.env.PORT || 5000;
 
 // For local development, listen on the port
 // For Vercel, we'll export the app directly
-
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 // Export the app for Vercel
 module.exports = app;

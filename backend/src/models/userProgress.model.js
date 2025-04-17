@@ -4,13 +4,12 @@ const userProgressSchema = new mongoose.Schema({
   walletAddress: {
     type: String,
     required: true,
-    lowercase: true,
-    index: true
+    lowercase: true
   },
   twitterQuestCompleted: {
     type: Boolean,
     default: false
-  },
+  }, 
   twitterQuestStarted: {
     type: Boolean,
     default: false
