@@ -5,7 +5,7 @@ import useAuth from '../hooks/useAuth';
 
 const ProjectCard = ({ project }) => {
   const { connected, publicKey } = useWallet();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, login, user } = useAuth();
   const [walletConnected, setWalletConnected] = useState(false);
   
   // Check if wallet is connected
@@ -66,27 +66,34 @@ const ProjectCard = ({ project }) => {
           </div>
         </div>
         
-        <Link 
-          to={`/project/${project.slug}`}
-          className="w-full bg-gradient-to-r from-solana-purple to-solana-green text-white py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center"
-        >
-          {!walletConnected ? (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Connect Wallet to Start
-            </>
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              View Quests
-            </>
-          )}
-        </Link>
+        {!walletConnected ? (
+          <button
+            className="w-full bg-gradient-to-r from-solana-purple to-solana-green text-white py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center"
+            disabled
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Connect Wallet to Start
+          </button>
+        ) : !isAuthenticated ? (
+          <button
+            className="w-full bg-gradient-to-r from-solana-purple to-solana-green text-white py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center"
+            onClick={login}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Authenticate
+          </button>
+        ) : (
+          <div className="w-full bg-green-700 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Welcome{user && user.username ? `, ${user.username}` : ''}! You are authenticated.
+          </div>
+        )
       </div>
     </div>
   );
