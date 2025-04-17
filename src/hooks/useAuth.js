@@ -49,19 +49,23 @@ export const useAuth = () => {
       setLoading(true);
       setError(null);
 
-      // Create a challenge message to sign
-      const message = `Sign this message to authenticate with SolQuest: ${Date.now()}`;
+      // 1. Request nonce and message from backend
+      const nonceResponse = await authAPI.getNonce(publicKey.toString());
+      const { nonce, message } = nonceResponse;
+      if (!nonce || !message) {
+        setError('Failed to retrieve authentication challenge from server.');
+        setLoading(false);
+        return false;
+      }
+
+      // 2. Ask wallet to sign the backend-provided message
       const encodedMessage = new TextEncoder().encode(message);
-      
-      // Request signature from wallet
       const signatureBytes = await signMessage(encodedMessage);
-      
-      // Convert signature to base58 string
       const signature = bs58.encode(signatureBytes);
-      
-      // Send to backend for verification
+
+      // 3. Send signature and wallet address to backend for verification
       const response = await authAPI.login(publicKey.toString(), signature);
-      
+
       setIsAuthenticated(true);
       setUser(response.user);
       return true;
