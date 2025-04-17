@@ -35,6 +35,14 @@ const userProgressSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  rewardsClaimed: {
+    type: Boolean,
+    default: false
+  },
+  rewardsClaimedAt: {
+    type: Date,
+    default: null
+  },
   lastUpdated: {
     type: Date,
     default: Date.now

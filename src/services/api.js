@@ -5,7 +5,7 @@
 import axios from 'axios';
 
 // Standardized API configuration
-const API_BASE_URL = 'https://solquest.io/api';
+const API_BASE_URL = 'https://api.solquest.io/api';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
